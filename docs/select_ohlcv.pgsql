@@ -1,9 +1,9 @@
-select t.ticker, e.code, count(o.date)
+select t.ticker, e.code, o.date, o.close, o.volume
 from securities.ticker t
 left join securities.exchange e
 on t.exchange_id = e.id
 left join securities.ohlcv o
 on t.id = o.ticker_id
-where e.code = 'XNYS'
-and t.ticker = 'CSX'
-group by 1,2
+where e.code = 'XASX'
+and t.ticker = '14D'
+
