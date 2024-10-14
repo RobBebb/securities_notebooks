@@ -8,7 +8,7 @@ sma = abstract.Function("sma")
 
 # Obtain OHLV data for HE
 # Obtain OHLV data for HE
-he = yf.download("HE", start="2023-01-15", interval="15m")[
+he = yf.download("HE", start="2024-08-16", interval="15m")[
     ["Open", "High", "Low", "Close", "Volume"]
 ]
 
@@ -28,7 +28,7 @@ class MeanReversion(Strategy):
         self.he_upper = self.he_mean + self.he_std
         self.he_lower = self.he_mean - self.he_std
 
-        self.he_close = self.I(sma, self.he, 1)
+        self.he_close = self.I(sma, self.he, 2)
 
     def next(self):
 
