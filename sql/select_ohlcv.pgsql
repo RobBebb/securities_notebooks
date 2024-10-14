@@ -4,5 +4,6 @@ left join securities.exchange e
 on t.exchange_id = e.id
 left join securities.ohlcv o
 on t.id = o.ticker_id
-where e.code = 'XASX'
-and t.ticker = 'BHP'
+where e.code = 'XNAS'
+and t.ticker = 'GOOG'
+order by date desc
