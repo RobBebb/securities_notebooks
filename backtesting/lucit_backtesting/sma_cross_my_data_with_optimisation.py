@@ -79,12 +79,13 @@ stats = bt.optimize(
 )
 print(stats)
 
-print(stats._strategy)
+
+print(f"Strategy: {stats['_strategy']}")
 
 print(
-    stats["_equity_curve"]
+    f"Equity Curve: {stats['_equity_curve']}"
 )  # Contains equity/drawdown curves. DrawdownDuration is only defined at ends of DD periods.
 
-print(stats["_trades"])  # Contains individual trade data)
+print(f" Trades: {stats['_trades']}")  # Contains individual trade data)
 bt.plot()
 bt.plot(plot_volume=False, plot_pl=False)
