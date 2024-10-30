@@ -24,6 +24,8 @@ There are many backtesting frameworks. I will look at some:
 
 [Marting Mayer-Krebs](https://mayerkrebs.com/?post_type=post) writes excellent articles on backtesting. He has also written articles on [building a Backtesting Framework in Python](https://mayerkrebs.com/building-a-backtesting-framework-in-python-from-scratch/)
 
+[AlgoTrading101 - Build a cudtom backtester with Python](https://algotrading101.com/learn/build-my-own-custom-backtester-python/)
+
 [Options Backtesting in Paython: An Introductory Walkthrough](https://pipekit.io/blog/options-backtesting-in-python-an-introductory-walkthrough)
 
 [ORATS](https://orats.com/) - Online options platform - could be expensive
