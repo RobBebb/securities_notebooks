@@ -14,3 +14,5 @@ conda install matplotlib
 conda install mplfinance
 pip install "yfinance[nospam,repair]"
 conda install -c conda-forge ta-lib
+conda install seaborn
+conda install scikit-optimize
