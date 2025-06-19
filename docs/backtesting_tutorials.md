@@ -26,7 +26,7 @@ There are many backtesting frameworks. I will look at some:
 
 [AlgoTrading101 - Build a cudtom backtester with Python](https://algotrading101.com/learn/build-my-own-custom-backtester-python/)
 
-[Options Backtesting in Paython: An Introductory Walkthrough](https://pipekit.io/blog/options-backtesting-in-python-an-introductory-walkthrough)
+[Options Backtesting in Python: An Introductory Walkthrough](https://pipekit.io/blog/options-backtesting-in-python-an-introductory-walkthrough)
 
 [ORATS](https://orats.com/) - Online options platform - could be expensive
 
@@ -37,4 +37,3 @@ Darts - Time Series library for forecasting and anomaly detection. See pypi
 The backtesting package is no longer supported, however there is a supported clone - lucid_backtesting available on pypi.
 
 [algotrading101](https://algotrading101.com/learn/backtesting-py-guide/)
-
