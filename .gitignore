@@ -21,3 +21,6 @@ streamlit/pages/1_📈_Plotting_Demo.py
 streamlit/pages/1_Market_Overview.py
 streamlit/pages/2_🌍_Mapping_Demo.py
 streamlit/pages/3_📊_DataFrame_Demo.py
+options/underlying_prices.pickle
+practice/globals.ipynb
+practice/polars_check_box_in_dataframe.py

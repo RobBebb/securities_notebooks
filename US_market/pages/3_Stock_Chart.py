@@ -32,7 +32,7 @@ with col1:
         "Select a country to get symbols:",
         country_codes,
         selection_mode="single",
-        default=country_codes[2],
+        default=country_codes[5],
     )
 
 with col2:
