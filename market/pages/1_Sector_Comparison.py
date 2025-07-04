@@ -4,29 +4,54 @@ import altair as alt
 import polars as pl
 from securities_load.securities.polar_table_functions import (
     retrieve_close_using_currency_tickers_dates,
+    retrieve_close_using_ticker_ids_and_dates,
     retrieve_tickers_using_watchlist_code,
+    retrieve_unique_country_alpha_3_from_exchanges,
 )
 
 import streamlit as st
 
 st.set_page_config(
-    page_title="US Sector Comparision",
+    page_title="Sector Comparision",
     layout="wide",
     # page_icon="👋",
 )
 
-st.title("US Sector Comparison")
+st.title("Sector Comparison")
 
 st.markdown("Select multiple sectors to compare how they have performed.")
 st.markdown("""All symbols are rebased to 100 on the first date selected.
         This allows an easy comparison of how they have performed.""")
 
-watchlist = "US Sector Overview"
-if watchlist:
+countries = retrieve_unique_country_alpha_3_from_exchanges()
+country_codes = countries["country_alpha_3"].to_list()
+
+col1, col2, col3, col4 = st.columns([0.2, 0.2, 0.4, 0.2])
+
+with col1:
+    country = st.pills(
+        "Select a country for comparison:",
+        country_codes,
+        selection_mode="single",
+        default=country_codes[5],
+    )
+
+if country is None:
+    st.warning("Please select a country.")
+    st.stop()
+
+watchlist = country + " Sector Overview"
+
+try:
     ticker_data = retrieve_tickers_using_watchlist_code(watchlist)
-    ticker_ids = [x[0] for x in ticker_data]
-    ticker_codes = [x[1] for x in ticker_data]
-    ticker_names = [x[2] for x in ticker_data]
+except ValueError:
+    st.warning(
+        "No watchlist available for the selected country at the moment. Please select another country."
+    )
+    st.stop()
+ticker_ids = [x[0] for x in ticker_data]
+ticker_codes = [x[1] for x in ticker_data]
+ticker_names = [x[2] for x in ticker_data]
 
 default_selected_tickers = ticker_codes[0]
 
@@ -35,9 +60,7 @@ last_year = date(today.year - 1, 1, 1)
 min_date = date(today.year - 5, 1, 1)
 max_date = today
 
-col1, col2, col3 = st.columns([0.23, 0.62, 0.15])
-
-with col1:
+with col2:
     selected_dates = st.date_input(
         "Select dates for analysis:",
         (last_year, today),
@@ -46,13 +69,13 @@ with col1:
         format="YYYY-MM-DD",
     )
 
-with col3:
+with col4:
     select_all = st.toggle("Select all tickers", value=False)
 
 if select_all:
     default_selected_tickers = ticker_codes
 
-with col2:
+with col3:
     selected_ticker_codes = st.pills(
         "Select tickers to chart:",
         ticker_codes,
@@ -75,7 +98,7 @@ symbols_df = pl.DataFrame({"Symbol": ticker_codes, "Name": ticker_names})
 
 @st.cache_data
 def load_data(tickers, start, end):
-    data = retrieve_close_using_currency_tickers_dates("USD", tickers, start, end)
+    data = retrieve_close_using_ticker_ids_and_dates(ticker_ids, start, end)
 
     return data
 
@@ -88,7 +111,7 @@ rebased_data = data.with_columns(
 
 if selected_ticker_codes:
     filtered_data = rebased_data.filter(pl.col("ticker").is_in(selected_ticker_codes))
-    filtered_data = filtered_data.drop("close")
+    filtered_data = filtered_data.drop("close", "id")
 
     line_chart = (
         alt.Chart(filtered_data)

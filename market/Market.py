@@ -4,61 +4,67 @@ import altair as alt
 import polars as pl
 from securities_load.securities.polar_table_functions import (
     retrieve_close_using_currency_tickers_dates,
+    retrieve_close_using_ticker_ids_and_dates,
     retrieve_tickers_using_watchlist_code,
+    retrieve_unique_country_alpha_3_from_exchanges,
     retrieve_watchlists_using_watchlist_type,
 )
 
 import streamlit as st
 
 st.set_page_config(
-    page_title="US Market Overview",
+    page_title="Market Overview",
     layout="wide",
     # page_icon="👋",
 )
 
-st.title("US Market Overview")
+st.title("Market Overview")
 
 st.sidebar.success("Select a type of analysis above.")
+
+countries = retrieve_unique_country_alpha_3_from_exchanges()
+country_codes = countries["country_alpha_3"].to_list()
+
+col1, col2, col3 = st.columns([0.34, 0.33, 0.33])
+
+with col1:
+    country = st.pills(
+        "Select a country to get watchlists:",
+        country_codes,
+        selection_mode="single",
+        default=country_codes[5],
+    )
 
 watchlist_data = retrieve_watchlists_using_watchlist_type("Dashboard")
 watchlist_ids = [x[0] for x in watchlist_data]
 watchlist_codes = [x[1] for x in watchlist_data]
 watchlist_description = [x[2] for x in watchlist_data]
 
-col1, col2 = st.columns([0.4, 0.6])
+watchlists = []
+for code in watchlist_codes:
+    if code.split(" ")[0] == country:
+        watchlists.append(code)
 
-with col1:
-    watchlist = st.pills(
-        "Select a watchlist to get symbols:",
-        watchlist_codes,
-        selection_mode="single",
-        default=watchlist_codes[1],
+if len(watchlists) == 0:
+    st.warning(
+        "No watchlists available for the selected country at the moment. Please select another country."
     )
-
-if watchlist:
-    ticker_data = retrieve_tickers_using_watchlist_code(watchlist)
-    ticker_ids = [x[0] for x in ticker_data]
-    ticker_codes = [x[1] for x in ticker_data]
-    ticker_names = [x[2] for x in ticker_data]
+    st.stop()
 
 with col2:
-    ticker_code = st.pills(
-        "Select a ticker to chart:",
-        ticker_codes,
+    watchlist = st.pills(
+        "Select a watchlist to get symbols:",
+        watchlists,
         selection_mode="single",
-        default=ticker_codes[0],
+        default=watchlists[0],
     )
-
-if ticker_code:
-    ticker_index = ticker_codes.index(ticker_code)
-    ticker_name = ticker_names[ticker_index]
 
 today = datetime.now()
 last_year = date(today.year - 1, 1, 1)
 min_date = date(today.year - 5, 1, 1)
 max_date = today
 
-with col1:
+with col3:
     selected_dates = st.date_input(
         "Select dates for analysis:",
         (last_year, today),
@@ -75,11 +81,33 @@ elif selected_dates and len(selected_dates) == 2:
     start = selected_dates[0].strftime("%Y-%m-%d")
     end = selected_dates[1].strftime("%Y-%m-%d")
 else:
-    st.write("No date selected.")
+    st.warning("No date selected. Please select a date.")
+    st.stop()
+
+if watchlist:
+    ticker_data = retrieve_tickers_using_watchlist_code(watchlist)
+    ticker_ids = [x[0] for x in ticker_data]
+    ticker_codes = [x[1] for x in ticker_data]
+    ticker_names = [x[2] for x in ticker_data]
+
+col1a, col2a = st.columns([0.67, 0.33])
+
+with col1a:
+    ticker_code = st.pills(
+        "Please select a symbol to chart:",
+        ticker_codes,
+        selection_mode="single",
+        default=ticker_codes[0],
+    )
+
+if ticker_code:
+    ticker_index = ticker_codes.index(ticker_code)
+    ticker_name = ticker_names[ticker_index]
+
 
 averages = ["5", "10", "20", "50", "200"]
 
-with col2:
+with col2a:
     moving_averages = st.pills(
         "Select one or more moving average periods to display:",
         averages,
@@ -90,7 +118,7 @@ with col2:
 
 @st.cache_data
 def load_data(tickers, start, end, moving_averages):
-    data = retrieve_close_using_currency_tickers_dates("USD", tickers, start, end)
+    data = retrieve_close_using_ticker_ids_and_dates(ticker_ids, start, end)
 
     for ave in moving_averages:
         ave_num = int(ave)
@@ -103,12 +131,12 @@ def load_data(tickers, start, end, moving_averages):
     return data
 
 
-data = load_data(ticker_codes, start, end, moving_averages)
+data = load_data(ticker_ids, start, end, moving_averages)
 
 
 if ticker_code:
     filtered_data = data.filter(pl.col("ticker") == ticker_code)
-    filtered_data = filtered_data.drop("ticker")
+    filtered_data = filtered_data.drop("ticker", "id")
     long_data = filtered_data.unpivot(
         index="date",
         variable_name="type",

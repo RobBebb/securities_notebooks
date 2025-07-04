@@ -25,7 +25,7 @@ ticker_types = retrieve_ticker_types()
 ticker_type_ids = ticker_types["id"].to_list()
 ticker_type_codes = ticker_types["code"].to_list()
 
-col1, col2 = st.columns([0.4, 0.6])
+col1, col2, col3, col4 = st.columns([0.25, 0.3, 0.2, 0.25])
 
 with col1:
     country = st.pills(
@@ -58,7 +58,7 @@ ticker_ids = tickers["id"].to_list()
 ticker_symbols = tickers["ticker"].to_list()
 ticker_names = tickers["name"].to_list()
 
-with col1:
+with col3:
     ticker = st.selectbox(
         "Select a symbol:",
         ticker_symbols,
@@ -73,7 +73,7 @@ last_year = date(today.year - 1, 1, 1)
 min_date = date(today.year - 5, 1, 1)
 max_date = today
 
-with col1:
+with col4:
     selected_dates = st.date_input(
         "Select dates for analysis:",
         (last_year, today),
@@ -92,40 +92,64 @@ elif selected_dates and len(selected_dates) == 2:
 else:
     st.write("No date selected.")
 
-averages = ["5", "10", "20", "50", "200"]
-
 moving_averages = []
 
-with col2:
-    st.write("Specify periods for moving averages. Set to zero if not required.")
-    col2a, col2b, col2c, col2d = st.columns([0.25, 0.25, 0.25, 0.25])
-    with col2a:
+col1a, col2a = st.columns([0.5, 0.5])
+
+
+with col1a:
+    st.write("Specify periods for simple moving averages. Set to zero if not required.")
+    col1b, col2b, col3b, col4b = st.columns([0.25, 0.25, 0.25, 0.25])
+    with col1b:
         ma1 = st.number_input(
-            ":blue[Simple moving average 1]",
+            ":blue[SMA 1]",
             value=None,
             step=1,
-            key="ma1",
+            key="sma1",
         )
         if ma1:
             moving_averages.append(ma1)
     with col2b:
-        ma2 = st.number_input(
-            ":orange[Simple moving average 2]", value=None, step=1, key="ma2"
-        )
+        ma2 = st.number_input(":orange[SMA 2]", value=None, step=1, key="sma2")
         if ma2:
             moving_averages.append(ma2)
-    with col2c:
-        ma3 = st.number_input(
-            ":red[Simple moving average 3]", value=None, step=1, key="ma3"
-        )
+    with col3b:
+        ma3 = st.number_input(":red[SMA 3]", value=None, step=1, key="sma3")
         if ma3:
             moving_averages.append(ma3)
-    with col2d:
-        ma4 = st.number_input(
-            ":violet[Simple moving average 4]", value=None, step=1, key="ma4"
-        )
+    with col4b:
+        ma4 = st.number_input(":violet[SMA 4]", value=None, step=1, key="sma4")
         if ma4:
             moving_averages.append(ma4)
+
+emas = []
+
+with col2a:
+    st.write(
+        "Specify periods for exponential moving averages. Set to zero if not required."
+    )
+    col1c, col2c, col3c, col4c = st.columns([0.25, 0.25, 0.25, 0.25])
+    with col1c:
+        ema1 = st.number_input(
+            ":blue[EMA 1]",
+            value=None,
+            step=1,
+            key="ema1",
+        )
+        if ema1:
+            emas.append(ema1)
+    with col2c:
+        ema2 = st.number_input(":orange[EMA 2]", value=None, step=1, key="ema2")
+        if ema2:
+            emas.append(ema2)
+    with col3c:
+        ema3 = st.number_input(":red[EMA 3]", value=None, step=1, key="ema3")
+        if ema3:
+            emas.append(ema3)
+    with col4c:
+        ema4 = st.number_input(":violet[EMA 4]", value=None, step=1, key="ema4")
+        if ema4:
+            emas.append(ema4)
 
 
 @st.cache_data
@@ -143,6 +167,18 @@ for ave in moving_averages:
     data = data.with_columns(
         pl.col("close").rolling_mean(window_size=ave).alias(ave_name)
     )
+for ema in emas:
+    ema_name = "EMA-" + str(ema)
+    data = data.with_columns(
+        pl.col("close")
+        .ewm_mean(
+            span=ema,
+            min_samples=ema,
+            adjust=False,
+        )
+        .alias(ema_name)
+    )
+
 MA_colors = ["blue", "orange", "red", "violet"]
 base = alt.Chart(data).encode(
     x=alt.X(
@@ -190,6 +226,18 @@ for ave in moving_averages:
     )
     color_count += 1
     candlestick = candlestick + sma
+
+# Exponential Moving Average
+color_count = 0
+for ema in emas:
+    ema_name = "EMA-" + str(ema)
+    ema = base.mark_line(color=MA_colors[color_count], strokeDash=[5, 5]).encode(
+        y=alt.Y(ema_name + ":Q"),
+        tooltip=["date", ema_name + ":Q"],
+    )
+    color_count += 1
+    candlestick = candlestick + ema
+
 
 volume = (
     alt.Chart(data)
