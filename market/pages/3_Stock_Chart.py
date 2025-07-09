@@ -2,6 +2,7 @@ from datetime import date, datetime
 
 import altair as alt
 import polars as pl
+import polars_talib as plta
 from securities_load.securities.polar_table_functions import (
     retrieve_exchange_ids_using_country_alpha_3,
     retrieve_ohlcv_using_ticker_id_and_dates,
@@ -92,50 +93,41 @@ elif selected_dates and len(selected_dates) == 2:
 else:
     st.write("No date selected.")
 
-moving_averages = []
+smas = []
 
 col1a, col2a = st.columns([0.5, 0.5])
 
-
 with col1a:
-    st.write("Specify periods for simple moving averages. Set to zero if not required.")
+    st.write(
+        "Specify periods for simple moving averages. Set to zero if not required.Displays solid."
+    )
     col1b, col2b, col3b, col4b = st.columns([0.25, 0.25, 0.25, 0.25])
     with col1b:
-        ma1 = st.number_input(
-            ":blue[SMA 1]",
-            value=None,
-            step=1,
-            key="sma1",
-        )
-        if ma1:
-            moving_averages.append(ma1)
+        sma1 = st.number_input(":blue[SMA 1]", value=None, step=1, key="sma1")
+        if sma1:
+            smas.append(sma1)
     with col2b:
-        ma2 = st.number_input(":orange[SMA 2]", value=None, step=1, key="sma2")
-        if ma2:
-            moving_averages.append(ma2)
+        sma2 = st.number_input(":orange[SMA 2]", value=None, step=1, key="sma2")
+        if sma2:
+            smas.append(sma2)
     with col3b:
-        ma3 = st.number_input(":red[SMA 3]", value=None, step=1, key="sma3")
-        if ma3:
-            moving_averages.append(ma3)
+        sma3 = st.number_input(":red[SMA 3]", value=None, step=1, key="sma3")
+        if sma3:
+            smas.append(sma3)
     with col4b:
-        ma4 = st.number_input(":violet[SMA 4]", value=None, step=1, key="sma4")
-        if ma4:
-            moving_averages.append(ma4)
+        sma4 = st.number_input(":violet[SMA 4]", value=None, step=1, key="sma4")
+        if sma4:
+            smas.append(sma4)
 
 emas = []
 
 with col2a:
     st.write(
-        "Specify periods for exponential moving averages. Set to zero if not required."
+        "Specify periods for exponential moving averages. Set to zero if not required. Displays dashed."
     )
     col1c, col2c, col3c, col4c = st.columns([0.25, 0.25, 0.25, 0.25])
     with col1c:
-        ema1 = st.number_input(
-            ":blue[EMA 1]",
-            value=None,
-            step=1,
-            key="ema1",
-        )
+        ema1 = st.number_input(":blue[EMA 1]", value=None, step=1, key="ema1")
         if ema1:
             emas.append(ema1)
     with col2c:
@@ -151,6 +143,24 @@ with col2a:
         if ema4:
             emas.append(ema4)
 
+col1d, col2d = st.columns([0.5, 0.5])
+
+with col1d:
+    st.write("Select the indicators to show.")
+    col1e, col2e, col3e, col4e = st.columns([0.25, 0.25, 0.25, 0.25])
+    with col1e:
+        show_macd = st.toggle("MACD?", value=False)
+    with col2e:
+        show_rsi = st.toggle("RSI?", value=False)
+
+with col2d:
+    st.write("Select candlestick patterns to show.")
+    col1f, col2f, col3f, col4f = st.columns([0.25, 0.25, 0.25, 0.25])
+    with col1f:
+        show_hammer = st.toggle("Hammer?", value=False)
+    with col2f:
+        show_2_crows = st.toggle("2 Crows?", value=False)
+
 
 @st.cache_data
 def load_data(ticker_id, start, end):
@@ -160,32 +170,70 @@ def load_data(ticker_id, start, end):
 
 
 data = load_data(ticker_id, start, end)
-data = data.with_columns(pl.col("date").dt.strftime("%Y-%m-%d").alias("date_as_string"))
-## Simple Moving Average
-for ave in moving_averages:
-    ave_name = "MA-" + str(ave)
-    data = data.with_columns(
-        pl.col("close").rolling_mean(window_size=ave).alias(ave_name)
+
+
+data = (
+    data.with_columns(
+        pl.col("date").dt.strftime("%Y-%m-%d").alias("date_as_string"),
+        *[plta.sma(pl.col("close"), timeperiod=i).alias(f"sma{i:03d}") for i in smas],
+        *[plta.ema(pl.col("close"), timeperiod=i).alias(f"ema{i:03d}") for i in emas],
+        plta.macd(fastperiod=10, slowperiod=20, signalperiod=5).alias("macdind"),
+        plta.rsi().alias("rsi"),
+        plta.ht_dcperiod().alias("ht_dcp"),
+        plta.aroon().alias("aroon"),
+        plta.wclprice().alias("wclprice"),
+        plta.stoch(
+            pl.col("high"),
+            pl.col("low"),
+            pl.col("close"),
+            fastk_period=14,
+            slowk_period=7,
+            slowd_period=7,
+        ).alias("stoch"),
+        plta.cdl2crows().alias("cdl2crows"),
+        plta.cdlhammer().alias("cdlhammer"),
     )
-for ema in emas:
-    ema_name = "EMA-" + str(ema)
-    data = data.with_columns(
-        pl.col("close")
-        .ewm_mean(
-            span=ema,
-            min_samples=ema,
-            adjust=False,
-        )
-        .alias(ema_name)
+    .with_columns(
+        pl.col("macdind").struct.field("macd"),
+        pl.col("macdind").struct.field("macdsignal"),
+        pl.col("macdind").struct.field("macdhist"),
+        pl.col("aroon").struct.field("aroondown"),
+        pl.col("aroon").struct.field("aroonup"),
+        pl.col("stoch").struct.field("slowk"),
+        pl.col("stoch").struct.field("slowd"),
     )
+    .select(pl.exclude(["macdind", "aroon", "stoch"]))
+)
+
+if show_hammer:
+    data = data.with_columns(
+        pl.when(pl.col("cdlhammer") == 100.0)
+        .then(pl.col("wclprice") * 1.025)
+        .when(pl.col("cdlhammer") == -100.0)
+        .then(pl.col("wclprice") * 0.975)
+        .otherwise(None)
+        .alias("hammer")
+    )
+
+if show_2_crows:
+    data = data.with_columns(
+        pl.when(pl.col("cdl2crows") == 100.0)
+        .then(pl.col("wclprice") * 1.025)
+        .when(pl.col("cdl2crows") == -100.0)
+        .then(pl.col("wclprice") * 0.975)
+        .otherwise(None)
+        .alias("crows")
+    )
+
+charts = []
 
 MA_colors = ["blue", "orange", "red", "violet"]
 base = alt.Chart(data).encode(
     x=alt.X(
         "date_as_string:O",
-        title="Date",
+        title="",
         # timeUnit="yearmonthdate",
-        axis=alt.Axis(grid=False, labelAngle=-45),
+        axis=alt.Axis(grid=False, labelAngle=-45, labels=False),
     ),
 )
 # Shadows
@@ -218,8 +266,8 @@ candlestick = rule + bar
 
 # Simple Moving Average
 color_count = 0
-for ave in moving_averages:
-    ave_name = "MA-" + str(ave)
+for i in smas:
+    ave_name = f"sma{i:03d}"
     sma = base.mark_line(color=MA_colors[color_count]).encode(
         y=alt.Y(ave_name + ":Q"),
         tooltip=["date", ave_name + ":Q"],
@@ -229,8 +277,8 @@ for ave in moving_averages:
 
 # Exponential Moving Average
 color_count = 0
-for ema in emas:
-    ema_name = "EMA-" + str(ema)
+for i in emas:
+    ema_name = f"ema{i:03d}"
     ema = base.mark_line(color=MA_colors[color_count], strokeDash=[5, 5]).encode(
         y=alt.Y(ema_name + ":Q"),
         tooltip=["date", ema_name + ":Q"],
@@ -238,6 +286,29 @@ for ema in emas:
     color_count += 1
     candlestick = candlestick + ema
 
+if show_hammer:
+    hammer = base.mark_point(shape="arrow", angle=180, size=100).encode(
+        y=alt.Y("hammer:Q"), color=alt.value("#000000")
+    )
+    candlestick = candlestick + hammer
+
+    hammer_text = base.mark_text(align="left", baseline="bottom", text="Hammer").encode(
+        y=alt.Y("hammer:Q"),
+    )
+    candlestick = candlestick + hammer_text
+
+if show_2_crows:
+    crows = base.mark_point(shape="arrow", angle=180, size=100).encode(
+        y=alt.Y("crows:Q"), color=alt.value("#000000")
+    )
+    candlestick = candlestick + crows
+
+    crows_text = base.mark_text(align="left", baseline="bottom", text="Hammer").encode(
+        y=alt.Y("crows:Q"),
+    )
+    candlestick = (candlestick + crows_text).interactive()
+
+charts.append(candlestick)
 
 volume = (
     alt.Chart(data)
@@ -245,14 +316,136 @@ volume = (
     .encode(
         x=alt.X(
             "date_as_string:O",
-            title="Date",
-            axis=alt.Axis(grid=False, labelAngle=-45),
+            title="",
+            axis=alt.Axis(grid=False, labelAngle=-45.0, labels=True),
         ),
         y=alt.Y("volume"),
         tooltip=["date:T", "volume"],
     )
-    .properties(width=600, height=100, title="Volume")
+    .properties(width=600, height=100)
 )
-chart = candlestick & volume
 
-st.altair_chart(chart)
+if show_macd:
+    macd = (
+        alt.Chart(data)
+        .encode(
+            x=alt.X(
+                "date_as_string:O",
+                title="",
+                axis=alt.Axis(
+                    tickColor="#D0D3D3",
+                    domainColor="#D0D3D3",
+                    gridColor="#D0D3D3",
+                    labelFontSize=10,
+                    titleFontSize=12,
+                    grid=False,
+                    labelAngle=-45,
+                    labels=False,
+                ),
+            )
+        )
+        .properties(width=1300, height=100, title="")
+    )
+
+    macd_line = macd.mark_line(color="dodgerblue", strokeWidth=1).encode(
+        y=alt.Y("macd:Q", title="MACD & Signal"), tooltip=["date:T", "macd:Q"]
+    )
+
+    signal_line = macd.mark_line(color="darkorange", strokeWidth=1).encode(
+        y=alt.Y("macdsignal:Q", title=""), tooltip=["date:T", "macdsignal:Q"]
+    )
+
+    macd_lines = (
+        alt.layer(
+            signal_line,
+            macd_line,
+        )
+        .resolve_scale(x="shared", y="shared")
+        .properties(title="", width=1300, height=100)
+    )
+
+    histogram = macd.mark_bar(size=3).encode(
+        y=alt.Y(
+            "macdhist:Q",
+            title="MACD Hist",
+            axis=alt.Axis(
+                # format="f",
+                tickColor="#9D9BA1",
+                domainColor="#9D9BA1",
+                gridColor="#D0D3D3",
+                grid=True,
+                labelFontSize=10,
+                titleFontSize=12,
+            ),
+        ),
+        color=alt.condition(
+            alt.datum.macdhist > 0,  # Positive bars
+            alt.value("green"),
+            alt.value("red"),  # Negative bars
+        ),
+        tooltip=["date:T", "macdhist:Q", "macd:Q", "macdsignal:Q"],
+    )
+
+    macd_chart = (
+        alt.layer(
+            histogram,
+            macd_lines,
+        )
+        .resolve_scale(x="shared", y="independent")
+        .properties(title="", width=1300, height=100)
+    )
+    charts.append(macd_chart)
+
+if show_rsi:
+    # Relative Strength Index (RSI)
+    # Create a base chart for RSI
+    rsi = (
+        alt.Chart(data)
+        .encode(
+            x=alt.X(
+                "date_as_string:O",
+                title="",
+                axis=alt.Axis(
+                    tickColor="#D0D3D3",
+                    domainColor="#D0D3D3",
+                    gridColor="#D0D3D3",
+                    labelFontSize=10,
+                    titleFontSize=12,
+                    grid=False,
+                    labelAngle=-45,
+                    labels=False,
+                ),
+            )
+        )
+        .properties(width=1300, height=100, title="")
+    )
+
+    rsi_line = rsi.mark_line(color="dodgerblue", strokeWidth=1).encode(
+        y=alt.Y("rsi:Q", title="RSI"), tooltip=["date:T", "rsi:Q"]
+    )
+    yrule_upper = (
+        alt.Chart()
+        .mark_rule(strokeDash=[2, 2], color="#9219E9")
+        .encode(y=alt.datum(70))
+    )
+
+    yrule_lower = (
+        alt.Chart()
+        .mark_rule(strokeDash=[2, 2], color="#9219E9")
+        .encode(y=alt.datum(30))
+    )
+
+    rsi_fill = rsi.mark_area(color="#9219E9", opacity=0.1).encode(
+        y=alt.datum(30), y2=alt.datum(70)
+    )
+
+    rsi_chart = rsi_line + yrule_lower + yrule_upper + rsi_fill
+    charts.append(rsi_chart)
+
+charts.append(volume)
+
+combined_chart = (
+    alt.vconcat(*charts).resolve_scale(x="shared").configure(background="#eaf3fb")
+)  # .interactive()
+
+st.altair_chart(combined_chart)
