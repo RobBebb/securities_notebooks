@@ -3,7 +3,6 @@ from datetime import date, datetime
 import altair as alt
 import polars as pl
 from securities_load.securities.polar_table_functions import (
-    retrieve_close_using_currency_tickers_dates,
     retrieve_close_using_ticker_ids_and_dates,
     retrieve_tickers_using_watchlist_code,
     retrieve_unique_country_alpha_3_from_exchanges,
