@@ -1,5 +1,4 @@
 from datetime import date, datetime
-from typing import Optional
 
 import altair as alt
 import polars as pl
@@ -9,8 +8,10 @@ from securities_load.securities.polar_table_functions import (
     retrieve_last_option_prices_using_stock_ticker_id_and_expiry_date_and_last_date,
     retrieve_tickers_using_watchlist_code,
 )
-from trading_formations.option_utils.option import Option
-from trading_formations.option_utils.option_calcs import option_calcs
+from securities_notebooks.market.utils.option_strategy_calcs import (
+    strategy_payoff_calcs,
+    strategy_type_calcs,
+)
 
 import streamlit as st
 
@@ -278,7 +279,6 @@ buy_sell_column_configuration_options = {
 
 
 tabs = st.tabs(expiry_dates_list)
-# TODO: Use a dictionary to accumulate the selected options in the tabs
 call_events = {}
 put_events = {}
 # Fill each tab with content
@@ -364,8 +364,6 @@ for i, tab in enumerate(tabs):
                 key=f"selected_puts_tuples{i}",
             )
 
-st.subheader("Selected Options")
-
 selected_options = []
 
 for i in range(len(expiry_dates_list)):
@@ -386,6 +384,21 @@ for i in range(len(expiry_dates_list)):
         # st.write(event)
         if event["buy"] or event["sell"]:
             selected_options.append(event)
+
+print(selected_options)
+
+if not selected_options:
+    st.warning("No options selected")
+    st.stop()
+
+selected_options = sorted(
+    selected_options,
+    # Sorting by sell means that options being bought are sorted first as false is sorted before true
+    # and if sell is false then buy is true.
+    key=lambda x: (x["expiry_date"], x["call_put"], x["sell"], x["strike"]),  # type: ignore
+)
+
+print(selected_options)
 
 # Configure the options data display
 selected_options_column_configuration_options = {
@@ -456,491 +469,42 @@ selected_options_column_configuration_options = {
     ),
 }
 
+st.subheader("Selected Options")
 
-if selected_options:
-    selected_options = sorted(
-        selected_options,
-        # Sorting by sell means that options being bought are sorted first as false is sorted before true
-        # and if sell is false then buy is true.
-        key=lambda x: (x["expiry_date"], x["call_put"], x["sell"], x["strike"]),
-    )
-    st.dataframe(
-        selected_options,
-        width=800,
-        column_config=selected_options_column_configuration_options,
-    )
+st.dataframe(
+    selected_options,
+    width=800,
+    column_config=selected_options_column_configuration_options,
+)
 
+strategy_dict = strategy_type_calcs(selected_options)
 
-if not selected_options:
-    st.warning("No options selected to buy or sell.")
+strategy = strategy_dict["strategy"]
+payment = strategy_dict["payment"]
+maximum_risk = strategy_dict["maximum_risk"]
+maximum_reward = strategy_dict["maximum_reward"]
+breakeven = strategy_dict["breakeven"]
+breakeven_down = strategy_dict["breakeven_down"]
+breakeven_up = strategy_dict["breakeven_up"]
+strategy_warning = strategy_dict["warning"]
+
+if strategy_warning:
+    st.warning(strategy_warning)
     st.stop()
 
-strategy = ""
-
-for option in range(len(selected_options)):
-    if selected_options[option]["buy"] and selected_options[option]["sell"]:
-        st.warning("Buying and selling the same option doesn't make sense.")
-        st.stop()
-
-payment: Optional[float] = None
-maximum_risk: Optional[float] = None
-maximum_reward: Optional[float] = None
-breakeven: Optional[float] = None
-
-if len(selected_options) == 1:
-    if selected_options[0]["call_put"] == "C":
-        if selected_options[0]["buy"]:
-            payment = selected_options[0]["mid"]
-            maximum_risk = payment
-            breakeven = round(
-                selected_options[0]["strike"] + selected_options[0]["mid"], 3
-            )
-            strategy = "Long Call"
-        else:
-            payment = selected_options[0]["mid"] * -1
-            maximum_reward = selected_options[0]["mid"]
-            breakeven = round(
-                selected_options[0]["strike"] + selected_options[0]["mid"], 3
-            )
-            strategy = "Short (Naked) Call"
-    else:
-        if selected_options[0]["buy"]:
-            payment = selected_options[0]["mid"]
-            maximum_risk = payment
-            maximum_reward = round(
-                selected_options[0]["strike"] - selected_options[0]["mid"], 3
-            )
-            breakeven = round(
-                selected_options[0]["strike"] - selected_options[0]["mid"], 3
-            )
-            strategy = "Long Put"
-        else:
-            payment = selected_options[0]["mid"] * -1
-            maximum_risk = round(
-                selected_options[0]["strike"] - selected_options[0]["mid"], 3
-            )
-            maximum_reward = selected_options[0]["mid"]
-            breakeven = round(
-                selected_options[0]["strike"] - selected_options[0]["mid"], 3
-            )
-            strategy = "Short (Naked) Put"
-
-if len(selected_options) == 2:
-    if selected_options[0]["expiry_date"] == selected_options[1]["expiry_date"]:
-        if (
-            selected_options[0]["call_put"] == "C"
-            and selected_options[1]["call_put"] == "C"
-        ):
-            if selected_options[0]["buy"] and selected_options[1]["buy"]:
-                st.warning("Buying two calls is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["sell"] and selected_options[1]["sell"]:
-                st.warning("Selling two calls is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["buy"]:
-                if selected_options[0]["strike"] < selected_options[1]["strike"]:
-                    payment = round(
-                        selected_options[0]["mid"] - selected_options[1]["mid"], 3
-                    )
-                    maximum_risk = payment
-                    maximum_reward = round(
-                        (
-                            selected_options[1]["strike"]
-                            - selected_options[0]["strike"]
-                            - payment
-                        ),
-                        3,
-                    )
-                    breakeven = round(selected_options[0]["strike"] + payment, 3)
-                    strategy = "Bull Call Spread"
-                elif selected_options[0]["strike"] > selected_options[1]["strike"]:
-                    payment = round(
-                        (selected_options[1]["mid"] - selected_options[0]["mid"]) * -1,
-                        3,
-                    )
-                    maximum_risk = round(
-                        (
-                            selected_options[0]["strike"]
-                            - selected_options[1]["strike"]
-                            - (selected_options[1]["mid"] - selected_options[0]["mid"])
-                        ),
-                        3,
-                    )
-                    maximum_reward = round(
-                        (selected_options[1]["mid"] - selected_options[0]["mid"]), 3
-                    )
-                    breakeven = round(
-                        selected_options[1]["strike"]
-                        + (selected_options[1]["mid"] - selected_options[0]["mid"]),
-                        3,
-                    )
-                    strategy = "Bear Call Spread"
-                else:
-                    st.warning(
-                        "Buying and selling calls with the same date and strike doesn't make sense."
-                    )
-                    st.stop()
-        elif (
-            selected_options[0]["call_put"] == "P"
-            and selected_options[1]["call_put"] == "P"
-        ):
-            if selected_options[0]["buy"] and selected_options[1]["buy"]:
-                st.warning("Buying two puts is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["sell"] and selected_options[1]["sell"]:
-                st.warning("Selling two puts is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["buy"]:
-                if selected_options[0]["strike"] < selected_options[1]["strike"]:
-                    payment = round(
-                        (selected_options[1]["mid"] - selected_options[0]["mid"]) * -1,
-                        3,
-                    )
-                    maximum_risk = round(
-                        (
-                            selected_options[1]["strike"]
-                            - selected_options[0]["strike"]
-                            - (
-                                (
-                                    selected_options[1]["mid"]
-                                    - selected_options[0]["mid"]
-                                )
-                                * -1
-                            )
-                        ),
-                        3,
-                    )
-                    maximum_reward = round(
-                        (selected_options[1]["mid"] - selected_options[0]["mid"]), 3
-                    )
-                    breakeven = round(
-                        selected_options[1]["strike"]
-                        - (selected_options[1]["mid"] - selected_options[0]["mid"]),
-                        3,
-                    )
-                    strategy = "Bull Put Spread"
-                elif selected_options[0]["strike"] > selected_options[1]["strike"]:
-                    payment = round(
-                        selected_options[1]["mid"] - selected_options[0]["mid"], 3
-                    )
-                    maximum_risk = payment
-                    maximum_reward = round(
-                        (
-                            selected_options[0]["strike"]
-                            - selected_options[1]["strike"]
-                            - payment
-                        ),
-                        3,
-                    )
-                    breakeven = round(selected_options[0]["strike"] + payment, 3)
-                    strategy = "Bear Put Spread"
-                else:
-                    st.warning(
-                        "Buying and selling puts with the same date and strike doesn't make sense."
-                    )
-                    st.stop()
-        elif (
-            selected_options[0]["call_put"] == "C"
-            and selected_options[1]["call_put"] == "P"
-        ):
-            if selected_options[0]["buy"] and selected_options[1]["buy"]:
-                if selected_options[0]["strike"] == selected_options[1]["strike"]:
-                    strategy = "Long Straddle"
-                elif selected_options[0]["strike"] != selected_options[1]["strike"]:
-                    strategy = "Long Strangle"
-            elif selected_options[0]["sell"] and selected_options[1]["sell"]:
-                if selected_options[0]["strike"] == selected_options[1]["strike"]:
-                    strategy = "Short Straddle"
-                elif selected_options[0]["strike"] != selected_options[1]["strike"]:
-                    strategy = "Short Strangle"
-            else:
-                st.warning("This is an unknown strategy. Do some more coding.")
-                st.stop()
-                # TODO: Need to cater for short straddles and strangles
-    # Remember the first option in the list should be the sold option with the shorter expiry date for calendards and diagonals
-    elif selected_options[0]["expiry_date"] < selected_options[1]["expiry_date"]:
-        st.warning(
-            "The following chart is not quite correct due to the different expiry dates."
-        )
-
-        if (
-            selected_options[0]["call_put"] == "C"
-            and selected_options[1]["call_put"] == "C"
-        ):
-            if selected_options[0]["buy"] and selected_options[1]["buy"]:
-                st.warning("Buying two calls is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["sell"] and selected_options[1]["sell"]:
-                st.warning("Selling two calls is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["buy"]:
-                st.warning(
-                    "This appears to be a diagonal call. However the bought call should have a longer expiry date than the sold call."
-                )
-                st.stop()
-            elif selected_options[0]["sell"]:
-                if selected_options[0]["strike"] > selected_options[1]["strike"]:
-                    payment = round(
-                        selected_options[0]["mid"] - selected_options[1]["mid"], 3
-                    )
-                    maximum_risk = payment
-                    strategy = "Diagonal Call"
-                elif selected_options[0]["strike"] < selected_options[1]["strike"]:
-                    st.warning(
-                        "This appears to be a diagonal call. However the bought call should have a lower strike than the sold call."
-                    )
-                    st.stop()
-                else:
-                    payment = round(
-                        selected_options[0]["mid"] - selected_options[1]["mid"], 3
-                    )
-                    maximum_risk = payment
-                    strategy = "Calender Call"
-        elif (
-            selected_options[0]["call_put"] == "P"
-            and selected_options[1]["call_put"] == "P"
-        ):
-            if selected_options[0]["buy"] and selected_options[1]["buy"]:
-                st.warning("Buying two puts is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["sell"] and selected_options[1]["sell"]:
-                st.warning("Selling two puts is an unknown strategy.")
-                st.stop()
-            elif selected_options[0]["buy"]:
-                st.warning(
-                    "This appears to be a diagonal call. However the bought put should have a longer expiry date than the bought call."
-                )
-                st.stop()
-            elif selected_options[0]["sell"]:
-                if selected_options[0]["strike"] < selected_options[1]["strike"]:
-                    st.warning(
-                        "This appears to be a diagonal call. However the bought put should have a lower strike than the bought call."
-                    )
-                    st.stop()
-                elif selected_options[0]["strike"] > selected_options[1]["strike"]:
-                    payment = round(
-                        selected_options[0]["mid"] - selected_options[1]["mid"], 3
-                    )
-                    strategy = "Diagonal Put"
-                else:
-                    payment = round(
-                        selected_options[0]["mid"] - selected_options[1]["mid"], 3
-                    )
-                    strategy = "Calendar Put"
-        else:
-            st.warning("This is an unknown strategy. Do some more coding.")
-            st.stop()
-            # TODO: Need to cater for short straddles and strangles
-    else:
-        st.warning("This is an unknown strategy.")
-        st.stop()
-
-if len(selected_options) == 4:
-    if (
-        selected_options[0]["expiry_date"] == selected_options[1]["expiry_date"]
-        and selected_options[2]["expiry_date"] == selected_options[3]["expiry_date"]
-    ):
-        if (
-            selected_options[0]["call_put"] == "C"
-            and selected_options[1]["call_put"] == "C"
-            and selected_options[2]["call_put"] == "P"
-            and selected_options[3]["call_put"] == "P"
-        ):
-            if (
-                selected_options[0]["buy"]
-                and selected_options[1]["sell"]
-                and selected_options[3]["sell"]
-                and selected_options[2]["buy"]
-            ):
-                if (
-                    selected_options[0]["strike"]
-                    > selected_options[1]["strike"]
-                    > selected_options[3]["strike"]
-                    > selected_options[2]["strike"]
-                ):
-                    strategy = "Long Iron Condor"
-                elif (
-                    selected_options[0]["strike"]
-                    > selected_options[1]["strike"]
-                    == selected_options[3]["strike"]
-                    > selected_options[2]["strike"]
-                ):
-                    strategy = "Long Iron Butterfly"
-                elif (
-                    selected_options[1]["strike"]
-                    > selected_options[0]["strike"]
-                    == selected_options[2]["strike"]
-                    > selected_options[3]["strike"]
-                ):
-                    strategy = "Short Iron Butterfly"
-                elif (
-                    selected_options[1]["strike"]
-                    > selected_options[0]["strike"]
-                    > selected_options[2]["strike"]
-                    > selected_options[3]["strike"]
-                ):
-                    strategy = "Short Iron Condor"
-                else:
-                    st.warning("1.This is an unknown strategy. Do some more coding.")
-                    st.stop()
-            else:
-                st.warning("1.This is an unknown strategy. Do some more coding.")
-                st.stop()
-        elif (
-            selected_options[0]["call_put"] == "C"
-            and selected_options[1]["call_put"] == "C"
-            and selected_options[2]["call_put"] == "C"
-            and selected_options[3]["call_put"] == "C"
-        ):
-            if (
-                selected_options[0]["buy"]
-                and selected_options[2]["sell"]
-                and selected_options[3]["sell"]
-                and selected_options[1]["buy"]
-            ):
-                if (
-                    selected_options[3]["strike"]
-                    > selected_options[1]["strike"]
-                    > selected_options[0]["strike"]
-                    > selected_options[2]["strike"]
-                ):
-                    strategy = "Short Call Condor"
-                elif (
-                    selected_options[3]["strike"]
-                    > selected_options[1]["strike"]
-                    == selected_options[0]["strike"]
-                    > selected_options[2]["strike"]
-                ):
-                    strategy = "Short Call Butterfly"
-                elif (
-                    selected_options[1]["strike"]
-                    > selected_options[3]["strike"]
-                    == selected_options[2]["strike"]
-                    > selected_options[0]["strike"]
-                ):
-                    strategy = "Long Call Butterfly"
-                elif (
-                    selected_options[1]["strike"]
-                    > selected_options[3]["strike"]
-                    > selected_options[2]["strike"]
-                    > selected_options[0]["strike"]
-                ):
-                    strategy = "Long Call Condor"
-                else:
-                    st.warning("1.This is an unknown strategy. Do some more coding.")
-                    st.stop()
-            else:
-                st.warning("1.This is an unknown strategy. Do some more coding.")
-                st.stop()
-        elif (
-            selected_options[0]["call_put"] == "P"
-            and selected_options[1]["call_put"] == "P"
-            and selected_options[2]["call_put"] == "P"
-            and selected_options[3]["call_put"] == "P"
-        ):
-            if (
-                selected_options[0]["buy"]
-                and selected_options[2]["sell"]
-                and selected_options[3]["sell"]
-                and selected_options[1]["buy"]
-            ):
-                if (
-                    selected_options[3]["strike"]
-                    > selected_options[1]["strike"]
-                    > selected_options[0]["strike"]
-                    > selected_options[2]["strike"]
-                ):
-                    strategy = "Short Put Condor"
-                elif (
-                    selected_options[3]["strike"]
-                    > selected_options[1]["strike"]
-                    == selected_options[0]["strike"]
-                    > selected_options[2]["strike"]
-                ):
-                    strategy = "Short Put Butterfly"
-                elif (
-                    selected_options[1]["strike"]
-                    > selected_options[3]["strike"]
-                    == selected_options[2]["strike"]
-                    > selected_options[0]["strike"]
-                ):
-                    strategy = "Long Put Butterfly"
-                elif (
-                    selected_options[1]["strike"]
-                    > selected_options[3]["strike"]
-                    > selected_options[2]["strike"]
-                    > selected_options[0]["strike"]
-                ):
-                    strategy = "Long Put Condor"
-                else:
-                    st.warning("1.This is an unknown strategy. Do some more coding.")
-                    st.stop()
-            else:
-                st.warning("1.This is an unknown strategy. Do some more coding.")
-                st.stop()
-        else:
-            st.warning("3.This is an unknown strategy. Do some more coding.")
-            st.stop()
-    else:
-        st.warning("4.This is an unknown strategy. Do some more coding.")
-        st.stop()
-
-min_x_value = selected_options[0]["strike"]
-max_x_value = selected_options[0]["strike"]
-for i in range(len(selected_options)):
-    if selected_options[i]["strike"] < min_x_value:
-        min_x_value = selected_options[i]["strike"]
-    if selected_options[i]["strike"] > max_x_value:
-        max_x_value = selected_options[i]["strike"]
-
-if last_close < min_x_value:
-    min_x_value = last_close
-if last_close > max_x_value:
-    max_x_value = last_close
-
-start_price = min_x_value - (min_x_value * 0.1)
-end_price = max_x_value + (max_x_value * 0.1)
-
-# start_price = self.stock_price - (self.stock_price * 0.10)
-# end_price = self.stock_price + (self.stock_price * 0.10)
-steps = 100
-step_size = (end_price - start_price) / steps
-stock_prices = [start_price + i * step_size for i in range(steps)]
-
-total_payoff = [0 for i in range(len(stock_prices))]
-
-for i in range(len(selected_options)):
-    option_id = selected_options[i]["id"]
-    option_ticker = selected_options[i]["ticker"]
-    option_strike = selected_options[i]["strike"]
-    option_call_put = selected_options[i]["call_put"]
-    option_expiry_date = selected_options[i]["expiry_date"]
-    option_mid = selected_options[i]["mid"]
-
-    option = Option(
-        option_id, option_ticker, option_strike, option_expiry_date, option_call_put
-    )
-    option_calc = option_calcs(
-        option, last_close, risk_free_rate=risk_free_rate, volatility=volatility
-    )
-    payoff = option_calc.payoff(stock_prices)
-    if selected_options[i]["buy"]:
-        # total_premium = total_premium - option_mid
-        for j in range(len(stock_prices)):
-            total_payoff[j] = total_payoff[j] + payoff[j] - option_mid
-    else:
-        # total_premium = total_premium + option_mid
-        for j in range(len(stock_prices)):
-            total_payoff[j] = total_payoff[j] - payoff[j] + option_mid
-
-total_payoff_df = pl.DataFrame({"stock_price": stock_prices, "profit": total_payoff})
+total_payoff_df = strategy_payoff_calcs(
+    selected_options=selected_options,
+    last_close=last_close,
+    risk_free_rate=risk_free_rate,
+    volatility=volatility,
+)
 
 if total_payoff_df is not None:
     base = alt.Chart(total_payoff_df).properties(
         title={
             "text": strategy,
             "subtitle": [
-                f"""Option Ticker: {option_ticker}, Strike: {option_strike}, Expiry: {option_expiry_date}, Underlying: {ticker_name}, Current Stock Price: {last_close:.2f}""",
+                f"""Underlying: {ticker_name}, Current Stock Price: {last_close:.2f}""",
                 f"""Payment: {payment}, Maximum Risk: {maximum_risk}, Maximum Reward: {maximum_reward}, Breakeven: {breakeven}""",
             ],
             "fontSize": 18,

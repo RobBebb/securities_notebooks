@@ -24,3 +24,6 @@ streamlit/pages/3_📊_DataFrame_Demo.py
 options/underlying_prices.pickle
 practice/globals.ipynb
 practice/polars_check_box_in_dataframe.py
+test/__pycache__/conftest.cpython-312-pytest-8.4.1.pyc
+test/__pycache__/test_option_utils.cpython-312-pytest-8.4.1.pyc
+market/utils/__pycache__/option_strategy_calcs.cpython-312.pyc
