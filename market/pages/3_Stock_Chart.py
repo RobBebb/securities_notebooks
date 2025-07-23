@@ -41,7 +41,7 @@ with col2:
         "Select a ticker type to get symbols:",
         ticker_type_codes,
         selection_mode="single",
-        default=ticker_type_codes[6],
+        default=ticker_type_codes[7],
     )
 
     if ticker_type:
@@ -171,6 +171,14 @@ def load_data(ticker_id, start, end):
 
 data = load_data(ticker_id, start, end)
 
+last_date = data[-1, "date"]
+last_close = data[-1, "close"]
+last_open = data[-1, "open"]
+last_high = data[-1, "high"]
+last_low = data[-1, "low"]
+last_volume = data[-1, "volume"]
+change = data[-1, "close"] - data[-2, "close"]
+percent_change = (change / data[-2, "close"]) * 100
 
 data = (
     data.with_columns(
@@ -228,19 +236,45 @@ if show_2_crows:
 charts = []
 
 MA_colors = ["blue", "orange", "red", "violet"]
-base = alt.Chart(data).encode(
-    x=alt.X(
-        "date_as_string:O",
-        title="",
-        # timeUnit="yearmonthdate",
-        axis=alt.Axis(grid=False, labelAngle=-45, labels=False),
-    ),
+base = (
+    alt.Chart(data)
+    .encode(
+        x=alt.X(
+            "date_as_string:O",
+            title="",
+            # timeUnit="yearmonthdate",
+            axis=alt.Axis(
+                tickColor="#000000",
+                domainColor="#D0D3D3",
+                gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
+                labelFontSize=12,
+                titleFontSize=16,
+                grid=False,
+                labelAngle=-45,
+                labels=False,
+            ),
+        ),
+    )
+    .interactive()
 )
 # Shadows
 rule = base.mark_rule().encode(
     y=alt.Y(
         "low:Q",
         title="Price",
+        axis=alt.Axis(
+            tickColor="#000000",
+            domainColor="#D0D3D3",
+            gridColor="#D0D3D3",
+            labelColor="#000000",
+            titleColor="#000000",
+            labelFontSize=12,
+            titleFontSize=16,
+            grid=True,
+            labels=True,
+        ),
         scale=alt.Scale(zero=False),
     ),
     y2=alt.Y2("high:Q"),
@@ -259,7 +293,18 @@ bar = (
         ),
         tooltip=["date:T", "open", "high", "low", "close"],
     )
-    .properties(width=600, height=400, title=f"Candlestick for {ticker_name}")
+    .properties(
+        width=600,
+        height=400,
+        title={
+            "text": f"Candlestick for {ticker_name}",
+            "subtitle": [
+                f"Date: {last_date}, Close: {last_close:.2f}, Change: {change:.2f} ({percent_change:.2f}%) Volume: {last_volume}",
+            ],
+            "fontSize": 18,
+            "subtitleFontSize": 14,
+        },
+    )
 )
 
 candlestick = rule + bar
@@ -317,9 +362,34 @@ volume = (
         x=alt.X(
             "date_as_string:O",
             title="",
-            axis=alt.Axis(grid=False, labelAngle=-45.0, labels=True),
+            axis=alt.Axis(
+                tickColor="#000000",
+                domainColor="#D0D3D3",
+                gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
+                labelFontSize=12,
+                titleFontSize=16,
+                grid=False,
+                labelAngle=-45,
+                labels=True,
+            ),
         ),
-        y=alt.Y("volume"),
+        y=alt.Y(
+            "volume",
+            title="Volume",
+            axis=alt.Axis(
+                tickColor="#000000",
+                domainColor="#D0D3D3",
+                gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
+                labelFontSize=12,
+                titleFontSize=16,
+                grid=True,
+                labels=True,
+            ),
+        ),
         tooltip=["date:T", "volume"],
     )
     .properties(width=600, height=100)
@@ -333,11 +403,13 @@ if show_macd:
                 "date_as_string:O",
                 title="",
                 axis=alt.Axis(
-                    tickColor="#D0D3D3",
+                    tickColor="#000000",
                     domainColor="#D0D3D3",
                     gridColor="#D0D3D3",
-                    labelFontSize=10,
-                    titleFontSize=12,
+                    labelColor="#000000",
+                    titleColor="#000000",
+                    labelFontSize=12,
+                    titleFontSize=16,
                     grid=False,
                     labelAngle=-45,
                     labels=False,
@@ -348,7 +420,22 @@ if show_macd:
     )
 
     macd_line = macd.mark_line(color="dodgerblue", strokeWidth=1).encode(
-        y=alt.Y("macd:Q", title="MACD & Signal"), tooltip=["date:T", "macd:Q"]
+        y=alt.Y(
+            "macd:Q",
+            title="MACD & Signal",
+            axis=alt.Axis(
+                tickColor="#000000",
+                domainColor="#D0D3D3",
+                gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
+                labelFontSize=12,
+                titleFontSize=16,
+                grid=False,
+                labels=True,
+            ),
+        ),
+        tooltip=["date:T", "macd:Q"],
     )
 
     signal_line = macd.mark_line(color="darkorange", strokeWidth=1).encode(
@@ -371,11 +458,13 @@ if show_macd:
             axis=alt.Axis(
                 # format="f",
                 tickColor="#9D9BA1",
-                domainColor="#9D9BA1",
+                domainColor="#000000",
                 gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
                 grid=True,
-                labelFontSize=10,
-                titleFontSize=12,
+                labelFontSize=12,
+                titleFontSize=16,
             ),
         ),
         color=alt.condition(
@@ -407,10 +496,12 @@ if show_rsi:
                 title="",
                 axis=alt.Axis(
                     tickColor="#D0D3D3",
-                    domainColor="#D0D3D3",
+                    domainColor="#000000",
                     gridColor="#D0D3D3",
-                    labelFontSize=10,
-                    titleFontSize=12,
+                    labelColor="#000000",
+                    titleColor="#000000",
+                    labelFontSize=12,
+                    titleFontSize=16,
                     grid=False,
                     labelAngle=-45,
                     labels=False,
@@ -421,7 +512,22 @@ if show_rsi:
     )
 
     rsi_line = rsi.mark_line(color="dodgerblue", strokeWidth=1).encode(
-        y=alt.Y("rsi:Q", title="RSI"), tooltip=["date:T", "rsi:Q"]
+        y=alt.Y(
+            "rsi:Q",
+            title="RSI",
+            axis=alt.Axis(
+                tickColor="#D0D3D3",
+                domainColor="#000000",
+                gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
+                labelFontSize=12,
+                titleFontSize=16,
+                grid=True,
+                labels=True,
+            ),
+        ),
+        tooltip=["date:T", "rsi:Q"],
     )
     yrule_upper = (
         alt.Chart()
@@ -446,6 +552,6 @@ charts.append(volume)
 
 combined_chart = (
     alt.vconcat(*charts).resolve_scale(x="shared").configure(background="#eaf3fb")
-)  # .interactive()
+)
 
 st.altair_chart(combined_chart)
