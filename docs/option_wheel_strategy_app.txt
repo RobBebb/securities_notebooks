@@ -1,0 +1,148 @@
+run_strategy.main
+    args = cli_args.parse_args()
+    SYMBOLS = “symbol_list.txt”.readlines()
+    client = broker_client.BrokerClient()
+        trade_client = TradingClientSigned()
+        stock_client = StockHistoricalDataClientSigned()
+        option_client = OptionHistoricalDataClientSigned()
+    if args.fresh_start
+        client.liquidate_all_positions()
+            # close option positions first then close all other positions (stocks) 
+            # Need to ensure options positions are closed before the stock position.
+            positions = self.get_positions()
+            to_liquidate = []
+            for p in positions:
+                if p.asset_class == AssetClass.US_OPTION:
+                    self.trade_client.close_position(p.symbol)
+                else:
+                    to_liquidate.append(p)
+            for p in to_liquidate:
+                self.trade_client.close_position(p.symbol)
+        allowed_symbols = SYMBOLS
+        buying_power = MAX_RISK
+    else
+        positions = client.get_positions()
+            trade_client.get_all_positions()
+        current_risk = state_manager.calculate_risk(positions)
+            risk = 0
+                if p.asset_class == AssetClass.US_EQUITY:
+                    risk += float(p.avg_entry_price) * abs(int(p.qty))
+                elif p.asset_class == AssetClass.US_OPTION:
+                    _, option_type, strike_price = utils.parse_option_symbol(p.symbol)
+                    if option_type == 'P':
+                        risk += 100 * strike_price * abs(int(p.qty))
+        states = state_manager.update_state(positions) # Given the current positions, return a state dictionary describing where in the wheel each symbol is.
+            state = {}
+            for p in all_positions:
+                if p.asset_class == AssetClass.US_EQUITY:
+                    if int(p.qty) <= 0:
+                        raise ValueError(f"Only long stock positions allowed! Got {p.symbol} with qty {p.qty}")
+                    underlying = p.symbol
+                    if underlying in state:
+                        if state[underlying]["type"] != "short_call_awaiting_stock":
+                            raise ValueError(f"Unexpected state for {underlying}: {state[underlying]}")
+                        state[underlying]["type"] = "short_call"
+                    else:
+                        state[underlying] = {"type": "long_shares", "price": float(p.avg_entry_price), "qty": int(p.qty)}
+                elif p.asset_class == AssetClass.US_OPTION:
+                    if int(p.qty) >= 0:
+                        raise ValueError(f"Only short option positions allowed! Got {p.symbol} with qty {p.qty}")
+                    underlying, option_type, _ = parse_option_symbol(p.symbol)
+                    if underlying in state:
+                        if not (state[underlying]["type"] == "long_shares" and option_type == 'C'):
+                            raise ValueError(f"Unexpected state for {underlying}: {state[underlying]} with option {option_type}")
+                        state[underlying]["type"] = "short_call"
+                    else:
+                        if option_type == "C":
+                            state[underlying] = {"type": "short_call_awaiting_stock", "price": None}
+                        elif option_type == "P":
+                            state[underlying] = {"type": "short_put", "price": None}
+                        else:
+                            raise ValueError(f"Unknown option type: {option_type}")
+            # Final validation
+            for underlying, st in state.items():
+                if st["type"] not in {"short_put", "long_shares", "short_call"}:
+                    raise ValueError(f"Invalid final state for {underlying}: {st}")
+            return state
+        for symbol, state in states.items()
+            if state == “long_shares”
+                execution.sell_calls(client, symbol, state["price"], state["qty"]) # against long_shares
+                    call_options = filter_options([Contract.from_contract(option, client) for option in client.get_options_contracts([symbol], 'call')], purchase_price)
+                    if call_options:
+                        scores = strategy.score_options(call_options)
+                        contract = call_options[np.argmax(scores)]
+                        client.market_sell(contract.symbol)
+        allowed_symbols = SYMBOLS.difference(states)
+        buying_power = MAX_RISK – current_risk
+    execution.sell_puts(client, allowed_symbols, buying_power)
+        filtered_symbols = strategy.filter_underlying(client, allowed_symbols, buying_power)
+            resp = client.get_stock_latest_trade(symbols)
+            filtered_symbols = [symbol for symbol in resp if 100*resp[symbol].price <= buying_power_limit]
+        option_contracts = client.get_options_contracts(filtered_symbols, 'put')
+            timezone = ZoneInfo("America/New_York")
+            today = datetime.datetime.now(timezone).date()
+            min_expiration = today + timedelta(days=EXPIRATION_MIN)
+            max_expiration = today + timedelta(days=EXPIRATION_MAX)
+            contract_type = {'put': ContractType.PUT, 'call': ContractType.CALL}.get(contract_type, None)
+            req = GetOptionContractsRequest(
+                underlying_symbols=underlying_symbols,
+                status=AssetStatus.ACTIVE,
+                expiration_date_gte=min_expiration,
+                expiration_date_lte=max_expiration,
+                type=contract_type,
+                limit=1000,)
+            all_contracts = []
+            page_token = None
+            while True:
+                if page_token:
+                    req.page_token = page_token
+                response = self.trade_client.get_option_contracts(req)
+                all_contracts.extend(response.option_contracts)
+                page_token = getattr(response, "next_page_token", None)
+                if not page_token:
+                    break
+        snapshots = client.get_option_snapshot([c.symbol for c in option_contracts])
+            if isinstance(symbol, str):
+                req = OptionSnapshotRequest(symbol_or_symbols=symbol)
+                return self.option_client.get_option_snapshot(req)
+            elif isinstance(symbol, list):
+                all_results = {}
+                for i in range(0, len(symbol), 100):
+                    batch = symbol[i:i+100]
+                    req = OptionSnapshotRequest(symbol_or_symbols=batch)
+                    result = self.option_client.get_option_snapshot(req)
+                    all_results.update(result)
+                return all_results
+        put_options = strategy.filter_options([Contract.from_contract_snapshot(contract, snapshots.get(contract.symbol, None)) for contract in option_contracts if snapshots.get(contract.symbol, None)])
+            filtered_contracts = [contract for contract in options 
+                if contract.delta 
+                and abs(contract.delta) > DELTA_MIN 
+                and abs(contract.delta) < DELTA_MAX
+                and (contract.bid_price / contract.strike) * (365 / (contract.dte + 1)) > YIELD_MIN
+                and (contract.bid_price / contract.strike) * (365 / (contract.dte + 1)) < YIELD_MAX
+                and contract.oi 
+                and contract.oi > OPEN_INTEREST_MIN
+                and contract.strike >= min_strike]
+        if put_options:
+            scores = strategy.score_options(put_options)
+                # Score options based on delta, days to expiration, and bid price.  
+                # The score is the annualized rate of return on selling the contract, discounted by the probability of assignment.
+                scores = [(1 - abs(p.delta)) * (250 / (p.dte + 5)) * (p.bid_price / p.strike) for p in options]
+            put_options = strategy.select_options(put_options, scores)
+                # Filter out low scores
+                filtered = [(option, score) for option, score in zip(options, scores) if score > SCORE_MIN]
+                # Pick the best option per underlying
+                best_per_underlying = {}
+                for option, score in filtered:
+                    underlying = option.underlying
+                    if (underlying not in best_per_underlying) or (score > best_per_underlying[underlying][1]):
+                        best_per_underlying[underlying] = (option, score)
+                # Sort the best options by score
+                sorted_best = sorted(best_per_underlying.values(), key=lambda x: x[1], reverse=True)
+                # Return top n (or all if n not specified)
+                return [option for option, _ in sorted_best[:n]] if n else [option for option, _ in sorted_best]
+            for p in put_options
+                buying_power -= 100 * p.strike 
+                if buying_power < 0:
+                    break
+			    client.market_sell(p.symbol)

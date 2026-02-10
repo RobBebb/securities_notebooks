@@ -1,12 +1,25 @@
 # type: ignore
 from typing import Dict, Optional
 
+import numpy as np
 import polars as pl
 from trading_formations.option_utils.option import Option
 from trading_formations.option_utils.option_calcs import option_calcs
 
 
 def strategy_type_calcs(selected_options: list) -> Dict:
+    """_summary_
+
+    Parameters
+    ----------
+    selected_options : list
+        _description_
+
+    Returns
+    -------
+    Dict
+        _description_
+    """
     strategy: Optional[str] = None
     payment: Optional[float] = None
     maximum_risk: Optional[float] = None
@@ -579,7 +592,7 @@ def strategy_payoff_calcs(
     # end_price = self.stock_price + (self.stock_price * 0.10)
     steps = 100
     step_size = (end_price - start_price) / steps
-    stock_prices = [start_price + i * step_size for i in range(steps)]
+    stock_prices = np.array([start_price + i * step_size for i in range(steps)])
 
     total_payoff = [0 for i in range(len(stock_prices))]
 
@@ -608,3 +621,88 @@ def strategy_payoff_calcs(
                 total_payoff[j] = total_payoff[j] - payoff[j] + option_mid
 
     return pl.DataFrame({"stock_price": stock_prices, "profit": total_payoff})
+
+
+def strategy_black_scholes_calcs(
+    selected_options: list,
+    last_close: float,
+    risk_free_rate: float,
+    volatility: float,
+    time_to_expiration: float,  # Time (as a fraction of a 365 day year) until the expiration of the option.
+) -> pl.DataFrame:
+    min_x_value = selected_options[0]["strike"]
+    max_x_value = selected_options[0]["strike"]
+    for i in range(len(selected_options)):
+        if selected_options[i]["strike"] < min_x_value:
+            min_x_value = selected_options[i]["strike"]
+        if selected_options[i]["strike"] > max_x_value:
+            max_x_value = selected_options[i]["strike"]
+
+    if last_close < min_x_value:
+        min_x_value = last_close
+    if last_close > max_x_value:
+        max_x_value = last_close
+
+    start_price = min_x_value - (min_x_value * 0.1)
+    end_price = max_x_value + (max_x_value * 0.1)
+
+    # start_price = self.stock_price - (self.stock_price * 0.10)
+    # end_price = self.stock_price + (self.stock_price * 0.10)
+    steps = 100
+    step_size = (end_price - start_price) / steps
+    stock_prices = np.array([start_price + i * step_size for i in range(steps)])
+
+    black_scholes = [0 for i in range(len(stock_prices))]
+
+    for i in range(len(selected_options)):
+        option_id = selected_options[i]["id"]
+        option_ticker = selected_options[i]["ticker"]
+        option_strike = selected_options[i]["strike"]
+        option_call_put = selected_options[i]["call_put"]
+        option_expiry_date = selected_options[i]["expiry_date"]
+        option_mid = selected_options[i]["mid"]
+
+        option = Option(
+            option_id, option_ticker, option_strike, option_expiry_date, option_call_put
+        )
+
+        option_calc = option_calcs(
+            option,
+            last_close,
+            risk_free_rate=risk_free_rate,
+            volatility=volatility,
+            time_to_expiration=time_to_expiration,
+        )
+        BS_option_value = option_calc.black_scholes_value(stock_prices)
+        if selected_options[i]["buy"]:
+            # total_premium = total_premium - option_mid
+            for j in range(len(stock_prices)):
+                black_scholes[j] = black_scholes[j] + BS_option_value[j] - option_mid
+        else:
+            # total_premium = total_premium + option_mid
+            for j in range(len(stock_prices)):
+                black_scholes[j] = black_scholes[j] - BS_option_value[j] + option_mid
+
+    return pl.DataFrame({"stock_price": stock_prices, "profit": black_scholes})
+
+
+def calculate_delta(
+    id: int,
+    ticker: str,
+    strike: float,
+    expiry_date,
+    call_put: str,
+    last_close: float,
+    risk_free_rate: float,
+    volatility: float,
+    time_to_expiration: float,  # Time (as a fraction of a 365 day year) until the expiration of the option.
+):
+    option = Option(id, ticker, strike, expiry_date, call_put)
+    option_calc = option_calcs(
+        option,
+        last_close,
+        risk_free_rate=risk_free_rate,
+        volatility=volatility,
+        time_to_expiration=time_to_expiration,
+    )
+    return option_calc.delta(last_close)

@@ -26,22 +26,26 @@ ticker_types = retrieve_ticker_types()
 ticker_type_ids = ticker_types["id"].to_list()
 ticker_type_codes = ticker_types["code"].to_list()
 
-col1, col2, col3, col4 = st.columns([0.25, 0.3, 0.2, 0.25])
+row1col1, row1col2, row1col3, row1col4 = st.columns([0.25, 0.3, 0.2, 0.25], border=True)
 
-with col1:
+with row1col1:
+    st.text("Select a country to get symbols:")
     country = st.pills(
         "Select a country to get symbols:",
         country_codes,
         selection_mode="single",
         default=country_codes[5],
+        label_visibility="collapsed",
     )
 
-with col2:
+with row1col2:
+    st.text("Select a ticker type to get symbols:")
     ticker_type = st.pills(
         "Select a ticker type to get symbols:",
         ticker_type_codes,
         selection_mode="single",
         default=ticker_type_codes[7],
+        label_visibility="collapsed",
     )
 
     if ticker_type:
@@ -59,10 +63,12 @@ ticker_ids = tickers["id"].to_list()
 ticker_symbols = tickers["ticker"].to_list()
 ticker_names = tickers["name"].to_list()
 
-with col3:
+with row1col3:
+    st.text("Select a symbol:")
     ticker = st.selectbox(
         "Select a symbol:",
         ticker_symbols,
+        label_visibility="collapsed",
     )
     if ticker:
         ticker_index = ticker_symbols.index(ticker)
@@ -74,13 +80,15 @@ last_year = date(today.year - 1, 1, 1)
 min_date = date(today.year - 5, 1, 1)
 max_date = today
 
-with col4:
+with row1col4:
+    st.text("Select dates for analysis:")
     selected_dates = st.date_input(
         "Select dates for analysis:",
         (last_year, today),
         min_date,
         max_date,
         format="YYYY-MM-DD",
+        label_visibility="collapsed",
     )
 
 if selected_dates and len(selected_dates) == 1:
@@ -95,70 +103,72 @@ else:
 
 smas = []
 
-col1a, col2a = st.columns([0.5, 0.5])
+row2col1, row2col2, row2col3 = st.columns([0.375, 0.375, 0.25], border=True)
 
-with col1a:
-    st.write(
-        "Specify periods for simple moving averages. Set to zero if not required.Displays solid."
-    )
-    col1b, col2b, col3b, col4b = st.columns([0.25, 0.25, 0.25, 0.25])
-    with col1b:
+with row2col1:
+    st.text("Specify periods for simple moving averages. Displays solid.")
+    row2col1a, row2col1b, row2col1c = st.columns([0.33, 0.33, 0.34])
+    with row2col1a:
         sma1 = st.number_input(":blue[SMA 1]", value=None, step=1, key="sma1")
         if sma1:
             smas.append(sma1)
-    with col2b:
+    with row2col1b:
         sma2 = st.number_input(":orange[SMA 2]", value=None, step=1, key="sma2")
         if sma2:
             smas.append(sma2)
-    with col3b:
+    with row2col1c:
         sma3 = st.number_input(":red[SMA 3]", value=None, step=1, key="sma3")
         if sma3:
             smas.append(sma3)
-    with col4b:
-        sma4 = st.number_input(":violet[SMA 4]", value=None, step=1, key="sma4")
-        if sma4:
-            smas.append(sma4)
 
 emas = []
 
-with col2a:
-    st.write(
-        "Specify periods for exponential moving averages. Set to zero if not required. Displays dashed."
-    )
-    col1c, col2c, col3c, col4c = st.columns([0.25, 0.25, 0.25, 0.25])
-    with col1c:
+with row2col2:
+    st.text("Specify periods for exponential moving averages. Displays dashed.")
+    row2col2a, rowcol2b, row2col2c = st.columns([0.33, 0.33, 0.34])
+    with row2col2a:
         ema1 = st.number_input(":blue[EMA 1]", value=None, step=1, key="ema1")
         if ema1:
             emas.append(ema1)
-    with col2c:
+    with rowcol2b:
         ema2 = st.number_input(":orange[EMA 2]", value=None, step=1, key="ema2")
         if ema2:
             emas.append(ema2)
-    with col3c:
+    with row2col2c:
         ema3 = st.number_input(":red[EMA 3]", value=None, step=1, key="ema3")
         if ema3:
             emas.append(ema3)
-    with col4c:
-        ema4 = st.number_input(":violet[EMA 4]", value=None, step=1, key="ema4")
-        if ema4:
-            emas.append(ema4)
 
-col1d, col2d = st.columns([0.5, 0.5])
+vmas = []
 
-with col1d:
+with row2col3:
+    st.text("Specify periods for volume moving averages.")
+    row2col3a, row2col3b = st.columns([0.5, 0.5])
+    with row2col3a:
+        vma1 = st.number_input(":blue[VMA 1]", value=None, step=1, key="vma1")
+        if vma1:
+            vmas.append(vma1)
+    with row2col3b:
+        vma2 = st.number_input(":orange[VMA 2]", value=None, step=1, key="vma2")
+        if vma2:
+            vmas.append(vma2)
+
+row3col1, row3col2 = st.columns([0.5, 0.5], border=True)
+
+with row3col1:
     st.write("Select the indicators to show.")
-    col1e, col2e, col3e, col4e = st.columns([0.25, 0.25, 0.25, 0.25])
-    with col1e:
+    row3col1a, row3col1b, row3col1c, row3col1d = st.columns([0.25, 0.25, 0.25, 0.25])
+    with row3col1a:
         show_macd = st.toggle("MACD?", value=False)
-    with col2e:
+    with row3col1b:
         show_rsi = st.toggle("RSI?", value=False)
 
-with col2d:
+with row3col2:
     st.write("Select candlestick patterns to show.")
-    col1f, col2f, col3f, col4f = st.columns([0.25, 0.25, 0.25, 0.25])
-    with col1f:
+    row3col2a, row3col2b, row3col2d, row3col2d = st.columns([0.25, 0.25, 0.25, 0.25])
+    with row3col2a:
         show_hammer = st.toggle("Hammer?", value=False)
-    with col2f:
+    with row3col2b:
         show_2_crows = st.toggle("2 Crows?", value=False)
 
 
@@ -200,6 +210,10 @@ data = (
         ).alias("stoch"),
         plta.cdl2crows().alias("cdl2crows"),
         plta.cdlhammer().alias("cdlhammer"),
+        *[
+            pl.col("volume").rolling_mean(window_size=i).alias(f"vma{i:03d}")
+            for i in vmas
+        ],
     )
     .with_columns(
         pl.col("macdind").struct.field("macd"),
@@ -233,31 +247,29 @@ if show_2_crows:
         .alias("crows")
     )
 
+# Do not use interactive charts as it messes up the moving averages
+
 charts = []
 
-MA_colors = ["blue", "orange", "red", "violet"]
-base = (
-    alt.Chart(data)
-    .encode(
-        x=alt.X(
-            "date_as_string:O",
-            title="",
-            # timeUnit="yearmonthdate",
-            axis=alt.Axis(
-                tickColor="#000000",
-                domainColor="#D0D3D3",
-                gridColor="#D0D3D3",
-                labelColor="#000000",
-                titleColor="#000000",
-                labelFontSize=12,
-                titleFontSize=16,
-                grid=False,
-                labelAngle=-45,
-                labels=False,
-            ),
+MA_colors = ["blue", "orange", "violet"]
+base = alt.Chart(data).encode(
+    x=alt.X(
+        "date_as_string:O",
+        title="",
+        # timeUnit="yearmonthdate",
+        axis=alt.Axis(
+            tickColor="#000000",
+            domainColor="#D0D3D3",
+            gridColor="#D0D3D3",
+            labelColor="#000000",
+            titleColor="#000000",
+            labelFontSize=12,
+            titleFontSize=16,
+            grid=False,
+            labelAngle=-45,
+            labels=False,
         ),
-    )
-    .interactive()
+    ),
 )
 # Shadows
 rule = base.mark_rule().encode(
@@ -355,28 +367,29 @@ if show_2_crows:
 
 charts.append(candlestick)
 
-volume = (
-    alt.Chart(data)
-    .mark_bar(color="dodgerblue")
-    .encode(
-        x=alt.X(
-            "date_as_string:O",
-            title="",
-            axis=alt.Axis(
-                tickColor="#000000",
-                domainColor="#D0D3D3",
-                gridColor="#D0D3D3",
-                labelColor="#000000",
-                titleColor="#000000",
-                labelFontSize=12,
-                titleFontSize=16,
-                grid=False,
-                labelAngle=-45,
-                labels=True,
-            ),
+volume_base = alt.Chart(data).encode(
+    x=alt.X(
+        "date_as_string:O",
+        title="",
+        axis=alt.Axis(
+            tickColor="#000000",
+            domainColor="#D0D3D3",
+            gridColor="#D0D3D3",
+            labelColor="#000000",
+            titleColor="#000000",
+            labelFontSize=12,
+            titleFontSize=16,
+            grid=False,
+            labelAngle=-45,
+            labels=True,
         ),
+    ),
+)
+volume = (
+    volume_base.mark_bar(color="dodgerblue")
+    .encode(
         y=alt.Y(
-            "volume",
+            "volume:Q",
             title="Volume",
             axis=alt.Axis(
                 tickColor="#000000",
@@ -390,10 +403,22 @@ volume = (
                 labels=True,
             ),
         ),
-        tooltip=["date:T", "volume"],
+        tooltip=["date:T", "volume:Q"],
     )
-    .properties(width=600, height=100)
+    .properties(width=1300, height=200)
 )
+
+
+color_count = 0
+for i in vmas:
+    vma_name = f"vma{i:03d}"
+    vma = base.mark_line(color=MA_colors[color_count]).encode(
+        y=alt.Y(vma_name + ":Q"),
+        tooltip=["date", vma_name + ":Q"],
+    )
+    color_count += 1
+    volume = volume + vma
+
 
 if show_macd:
     macd = (

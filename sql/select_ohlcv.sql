@@ -1,4 +1,4 @@
-select t.ticker, e.code, o.date, o.close, o.volume
+select t.ticker, e.code, o.date, o.open, o.high, o.low, o.close, o.volume
 from securities.ticker t
 left join securities.exchange e
 on t.exchange_id = e.id

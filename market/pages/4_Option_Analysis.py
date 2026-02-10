@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import altair as alt
 import polars as pl
@@ -9,6 +9,8 @@ from securities_load.securities.polar_table_functions import (
     retrieve_tickers_using_watchlist_code,
 )
 from securities_notebooks.market.utils.option_strategy_calcs import (
+    calculate_delta,
+    strategy_black_scholes_calcs,
     strategy_payoff_calcs,
     strategy_type_calcs,
 )
@@ -98,6 +100,7 @@ def cache_get_latest_ohlcv_using_ticker_id(ticker_id, name):
 ohlcv = cache_get_latest_ohlcv_using_ticker_id(ticker_id, ticker_name)
 
 # Extract the last date a price is available for
+# last_date = ohlcv[0, 1] + timedelta(days=1)
 last_date = ohlcv[0, 1]
 last_close = ohlcv[0, 5]
 
@@ -174,14 +177,62 @@ def cache_retrieve_last_option_prices_using_stock_ticker_id_and_expiry_date_and_
             ticker_id, expiry_date, last_date
         )
     )
-    options = options.with_columns(
-        pl.when((pl.col("bid") == 0) | (pl.col("ask") == 0))
-        .then(pl.col("last_price"))
-        .otherwise((pl.col("bid") + pl.col("ask")) / 2.0)
-        .alias("mid"),
-        pl.lit(False).alias("buy"),
-        pl.lit(False).alias("sell"),
+    today_str = today.strftime("%Y-%m-%d")
+
+    options = (
+        options.with_columns(
+            pl.when((pl.col("bid") == 0) | (pl.col("ask") == 0))
+            .then(pl.col("last_price"))
+            .otherwise((pl.col("bid") + pl.col("ask")) / 2.0)
+            .alias("mid"),
+            pl.lit(False).alias("buy"),
+            pl.lit(False).alias("sell"),
+            pl.lit(today_str).alias("today_str"),
+        )
+        .with_columns(pl.col("today_str").str.to_date().alias("today_date"))
+        .with_columns(
+            (pl.col("expiry_date") - pl.col("today_date") + pl.duration(days=1)).alias(
+                "days_to_expiry"
+            ),
+        )
+        .with_columns(
+            (pl.col("days_to_expiry").dt.total_days() / 365).alias("days_to_expiry_int")
+        )
     )
+
+    options = options.with_columns(
+        [
+            pl.struct(
+                [
+                    "id",
+                    "ticker",
+                    "strike",
+                    "expiry_date",
+                    "call_put",
+                    "days_to_expiry_int",
+                ]
+            )
+            .map_elements(
+                lambda x: calculate_delta(
+                    x["id"],
+                    x["ticker"],
+                    x["strike"],
+                    x["expiry_date"],
+                    x["call_put"],
+                    last_close,
+                    risk_free_rate,
+                    volatility,
+                    x[
+                        "days_to_expiry_int"
+                    ],  # Time (as a fraction of a 365 day year) until the expiration of the option.
+                ),
+                return_dtype=pl.Float64,
+            )
+            .alias("delta")
+        ]
+    )
+
+    # st.dataframe(options)
 
     # Reorder the columns
     options = options.select(
@@ -192,6 +243,7 @@ def cache_retrieve_last_option_prices_using_stock_ticker_id_and_expiry_date_and_
             "bid",
             "ask",
             "mid",
+            "delta",
             "volume",
             "open_interest",
             "implied_volatility",
@@ -235,6 +287,12 @@ buy_sell_column_configuration_options = {
     "mid": st.column_config.NumberColumn(
         "Mid",
         help="The mid price between bid and ask",
+        format="$%.3f",
+        width=None,
+    ),
+    "delta": st.column_config.NumberColumn(
+        "Delta",
+        help="The rate of change of the bid/asl price of an option with respect to the change in the underlying asset's price.",
         format="$%.3f",
         width=None,
     ),
@@ -318,6 +376,7 @@ for i, tab in enumerate(tabs):
                     "bid",
                     "ask",
                     "mid",
+                    "delta",
                     "volume",
                     "open_interest",
                     "implied_volatility",
@@ -347,6 +406,7 @@ for i, tab in enumerate(tabs):
                     "bid",
                     "ask",
                     "mid",
+                    "delta",
                     "volume",
                     "open_interest",
                     "implied_volatility",
@@ -365,6 +425,9 @@ for i, tab in enumerate(tabs):
             )
 
 selected_options = []
+# convert datetime to date
+min_option_date = today.date()
+max_option_date = today.date()
 
 for i in range(len(expiry_dates_list)):
     # get a list of options for each expiry_date
@@ -377,6 +440,10 @@ for i in range(len(expiry_dates_list)):
         # st.write(event)
         if event["buy"] or event["sell"]:
             selected_options.append(event)
+            if event["expiry_date"] < min_option_date:
+                min_option_date = event["expiry_date"]
+            if event["expiry_date"] > max_option_date:
+                max_option_date = event["expiry_date"]
 
     for k in range(len(put_event)):
         # get one option
@@ -384,6 +451,10 @@ for i in range(len(expiry_dates_list)):
         # st.write(event)
         if event["buy"] or event["sell"]:
             selected_options.append(event)
+            if event["expiry_date"] < min_option_date:
+                min_option_date = event["expiry_date"]
+            if event["expiry_date"] > max_option_date:
+                max_option_date = event["expiry_date"]
 
 print(selected_options)
 
@@ -428,6 +499,12 @@ selected_options_column_configuration_options = {
     "mid": st.column_config.NumberColumn(
         "Mid",
         help="The mid price between bid and ask",
+        format="$%.3f",
+        width=None,
+    ),
+    "delta": st.column_config.NumberColumn(
+        "Delta",
+        help="The rate of change of the bid/asl price of an option with respect to the change in the underlying asset's price.",
         format="$%.3f",
         width=None,
     ),
@@ -498,6 +575,52 @@ total_payoff_df = strategy_payoff_calcs(
     risk_free_rate=risk_free_rate,
     volatility=volatility,
 )
+total_payoff_df = total_payoff_df.with_columns(pl.lit("expiry").alias("Time"))
+days_to_expiry = (max_option_date - today.date()).days
+
+time_to_expiration_now = days_to_expiry / 365.0  # Convert days to years
+time_to_expiration_half = time_to_expiration_now * 0.5
+time_to_expiration_quarter = time_to_expiration_now * 0.25
+# st.write(f"now: {time_to_expiration_now:.2f}")
+# st.write(f"half: {time_to_expiration_half:.2f}")
+# st.write(f"quarter: {time_to_expiration_quarter:.2f}")
+
+
+now_black_scholes = strategy_black_scholes_calcs(
+    selected_options,
+    last_close,
+    risk_free_rate,
+    volatility,
+    time_to_expiration_now,
+)
+now_black_scholes = now_black_scholes.with_columns(pl.lit("now").alias("Time"))
+
+half_black_scholes = strategy_black_scholes_calcs(
+    selected_options,
+    last_close,
+    risk_free_rate,
+    volatility,
+    time_to_expiration_half,
+)
+half_black_scholes = half_black_scholes.with_columns(pl.lit("half").alias("Time"))
+
+
+quarter_black_scholes = strategy_black_scholes_calcs(
+    selected_options,
+    last_close,
+    risk_free_rate,
+    volatility,
+    time_to_expiration_quarter,
+)
+quarter_black_scholes = quarter_black_scholes.with_columns(
+    pl.lit("quarter").alias("Time")
+)
+
+total_payoff_df = pl.concat(
+    [total_payoff_df, now_black_scholes, half_black_scholes, quarter_black_scholes],
+    how="vertical",
+)
+st.dataframe(total_payoff_df)
 
 if total_payoff_df is not None:
     base = alt.Chart(total_payoff_df).properties(
@@ -517,12 +640,36 @@ if total_payoff_df is not None:
         x=alt.X(
             "stock_price:Q",
             title="Stock Price",
+            axis=alt.Axis(
+                tickColor="#D0D3D3",
+                domainColor="#000000",
+                gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
+                labelFontSize=12,
+                titleFontSize=16,
+                grid=True,
+                labelAngle=-45,
+                labels=True,
+            ),
         ),
         y=alt.Y(
             "profit:Q",
             title="Profit",
             scale=alt.Scale(zero=False),
+            axis=alt.Axis(
+                tickColor="#D0D3D3",
+                domainColor="#000000",
+                gridColor="#D0D3D3",
+                labelColor="#000000",
+                titleColor="#000000",
+                labelFontSize=12,
+                titleFontSize=16,
+                grid=True,
+                labels=True,
+            ),
         ),
+        color="Time:N",
         tooltip=["stock_price:Q", "Profit:Q"],
     )
 
