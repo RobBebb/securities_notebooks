@@ -8,7 +8,7 @@ sma = abstract.Function("sma")
 
 # Obtain OHLV data for HE
 # Obtain OHLV data for HE
-he = yf.download("HE", start="2024-08-16", interval="15m")[
+he = yf.download("HE", start="2026-04-106", interval="15m")[
     ["Open", "High", "Low", "Close", "Volume"]
 ]
 

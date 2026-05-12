@@ -4,6 +4,7 @@
 
 There are many backtesting frameworks. I will look at some:
 
+- simple-backtest-kankane
 - backtesting
 - bt
 - backtrader - Great documentation for learning. Not being maintained
@@ -15,7 +16,7 @@ There are many backtesting frameworks. I will look at some:
 - QSTrader - QuantStart
 - [pysystemtrade](https://github.com/robcarver17/pysystemtrade?tab=readme-ov-file) - futures orientated
 - [OptionSuite](https://github.com/sirnfs/OptionSuite/) - Options - also see link below about options
-- [Optopsy](https://github.com/michaelchu/optopsy)
+- [Optopsy](https://github.com/goldspanlabs/optopsy)
 - QuantConnect - includes options (commercial)
 - zipline
 - awesome-systematic-trading 1.31.5 - This is alist of packages, books strategies etc.

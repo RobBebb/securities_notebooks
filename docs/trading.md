@@ -5,16 +5,15 @@
 - [Trading](#trading)
   - [Market Hours](#market-hours)
   - [Market Calendar](#market-calendar)
+  - [Stocks to monitor](#stocks-to-monitor)
+  - [My Filters](#my-filters)
+  - [My Strategies](#my-strategies)
 - [Trading Strategies and Patterns](#trading-strategies-and-patterns)
   - [Technical Analysis](#technical-analysis)
   - [Trading Indicators](#trading-indicators)
   - [Trading Candlesticks](#trading-candlesticks)
   - [Trading Patterns](#trading-patterns)
-  - [Options](#options)
   - [Option Strategies](#option-strategies)
-  - [Performance Measuring Methods](#performance-measuring-methods)
-  - [Backtesting](#backtesting)
-  - [Python libraries](#python-libraries)
 - [Database](#database)
   - [polygon](#polygon)
   - [securities](#securities)
@@ -27,22 +26,25 @@
   - [Budibase](#budibase)
   - [DBeaver](#dbeaver)
   - [Streamlit Dashboard](#streamlit-dashboard)
-- [TODO](#todo)
-- [My Filters](#my-filters)
-  - [ADX (Average Directiona Index)](#adx-average-directiona-index)
-- [My Strategies](#my-strategies)
-  - [Bullish Trend Following with Alpaca and Options](#bullish-trend-following-with-alpaca-and-options)
-  - [Selling a 45-day 12-delta put on the E-mini S\&P 500 ( /ES ) and taking profits at 50%](#selling-a-45-day-12-delta-put-on-the-e-mini-sp-500--es--and-taking-profits-at-50)
-- [Stocks, Indices and ETFs](#stocks-indices-and-etfs)
+- [Education](#education)
+  - [Options](#options)
   - [Indices](#indices)
   - [ETF's](#etfs)
+  - [Indces vs ETFs](#indces-vs-etfs)
   - [VIX](#vix)
+  - [Stocks](#stocks)
+  - [Futures](#futures)
+- [Backtesting](#backtesting)
+  - [Performance Measuring Methods](#performance-measuring-methods)
+  - [Backtesting Libraries](#backtesting-libraries)
+  - [Python libraries](#python-libraries)
 - [Helpful Links](#helpful-links)
-
+- [TODO](#todo)
 
 ## Trading
 
--[Financial Wisdom (YouTube)](https://www.youtube.com/c/FinancialWisdom)
+- [Financial Wisdom (YouTube)](https://www.youtube.com/c/FinancialWisdom)
+- [ASX Online courses](https://www.asx.com.au/investors/investment-tools-and-resources/online-courses)
 
 ### Market Hours
 
@@ -94,6 +96,76 @@
 
 [🠉](#table-of-contents)
 
+### Stocks to monitor
+
+| Symbol | Name | Comment |
+| :----- | :--- | :----- |
+| CAR | Avis Budget Group, Inc. | Gone crazy, when will it crash? |
+| RGTI | Rigetti Computing Inc | Quantum stock |
+| IONQ | IonQ Inc Class A | Quantum stock |
+| QBTS | D-Wave Quantum Inc | Quantum stock |
+
+### My Filters
+
+- No Filter (Baseline Case)
+- RSI (Relative Strength Index)
+- [ADX (Average Directional Index)](#adx-average-directiona-index)
+- Close above average close
+- Moving Average Slope
+- Williams %R
+- Stochastics
+- 2 Bar RSI
+
+#### ADX (Average Directiona Index)
+
+```python
+If FILTER = 2 Then begin //ADX Filter
+    FilterLong = ADX(14) > InputVar2*1.5
+    FilterShort = ADX(14) < InputVar2*1.5
+If ENTRY = 1 then Begin
+    if marketposition=0 and FilterLong and close -close[InputVar1] crosses above 0 then buy next bar at market
+```
+
+### My Strategies
+
+- [Bullish Trend Following with Alpaca and Options](#bullish-trend-following-with-alpaca-and-options)
+- [Selling a 45-day 12-delta put on the E-mini S&P 500 ( /ES ) and taking profits at 50%](#selling-a-45-day-12-delta-put-on-the-e-mini-sp-500--es--and-taking-profits-at-50)
+
+#### Bullish Trend Following with Alpaca and Options
+
+- Market direction
+- Sector Direction
+- Best Stock
+- Entry Point
+- Select option strategy
+- Select options
+- Calculate stop loss
+- Calculate take profit
+- Buy options
+- Place take profit order
+- Monitor trade
+  - Close trade to take profit or minimise loss
+- Document trade
+
+#### Selling a 45-day 12-delta put on the E-mini S&P 500 ( /ES ) and taking profits at 50%
+
+Stock must be moving up.
+
+##### The Trade
+
+1. Trade symbol /ES in your broker (E-mini S&P 500 futures contract) (Option on a futures contract)
+   1. Could also use the Micro E-mini /MES. Try using SPY (SPDR S&P 500 ETF Trust) or QQQ (Invesco QQQ Trust) or SPX (S&P 500 Index)/XSP (S&P 500 MINI SPX OPTIONS INDEX).
+2. Select expiration 45 days out
+3. Select .12 Delta
+4. Sell the put at the .12 Delta
+5. Take profit GTC at 50% of Credit Received
+
+##### Risk
+
+1. Take profit at 50%
+2. Close trade at 21 days; regardless of profit or loss
+3. Keep trade size small
+
 ## Trading Strategies and Patterns
 
 - [Designing a Profitable Intraday Strategy Using Python and Alpaca](https://concretumgroup.com/backtesting-7-years-of-free-data-beat-the-market-an-effective-intraday-momentum-strategy-for-the-sp500-etf-spy/)
@@ -121,7 +193,7 @@ Indicators fall into four categories:
 - Price indicators (raw price charts, support and resistance lines)
 - Trend indicators like moving averages
 - Momentum indicators like RSI
-- Volume indicators like OBV
+- Volume indicators like OBV, VWAP, CMF, MFI and DVH
 
 [🠉](#table-of-contents)
 
@@ -138,13 +210,17 @@ Popular indicators
 - [Aroon Indicator (AROON)](#aroon-indicator): Identifies trend reversals and trend strength.
 - [Average True Range (ATR)](#average-true-range): Gauges market volatility.
 - [On-Balance Volume (OBV)](#on-balance-volume): Gauges the cumulatiove flow of money in and out of a security.
-- [Money Flow Index (MFI)](#money-flow-index): Determines overbought and oversold using volume as well as price.
 - [Average Directional Index (ADX)](#average-direction-index): Measures the strength of a trend.
 - [Donchian Channels (Donchian Channel)](#donchian-channels): Define absolute highs, lows and midpoint.
 - [Parabolic SAR (Stop and Reverse)](#parabolic-sar): Determines price direction and when it is changing.
 - [Ichimoku Cloud Indicator](#ichimoku -cloud): Provides insight into trend direction, momentum and support/resistance.
 - [Williams Percent Range (Williams %R)](#williams-percent-range): a momemtum indicator.
 - [Commodity Channel Index](#commodity-channel-index): Identify overbought and oversold conditions.
+- [Volume Weighted Average Price (VWAP)](#volume-weighted-average-price): The average volume of a stock over a rolling period, helping to identify trends
+- [Chaikin Money Flow (CMF)](#chaikn-money-flow): Measures the difference between buying and selling pressure, indicating market sentiment
+- [Money Flow Index (MFI)](money-flow-index): Assesses the strength of buying and selling pressure, providing insights into market trends. Determines overbought and oversold using volume as well as price.
+- [Dynamic Volume Histogram (DVH)](#dynamic-volume-histogram): Visulalises volume intensity based on candle direction, helping to identify strong buying and selling pressure.
+
 
 [🠉](#table-of-contents)
 
@@ -178,6 +254,10 @@ Consists of a simple moving average and two standard deviation lines to identify
 
 [🠉](#table-of-contents)
 
+#### Chaikin Money Flow
+
+[🠉](#table-of-contents)
+
 #### Commodity Channel Index
 
 - [How to Use the Commodity Channel Index (CCI) Indicator – Trading Strategy](https://howtotrade.com/indicators/commodity-channel-index-cci/)
@@ -189,6 +269,10 @@ Consists of a simple moving average and two standard deviation lines to identify
 
 - [Donchian Channel Explained](https://alchemymarkets.com/education/indicators/donchian-channel/)
 - [Best Donchian Channel Trading Strategies Analysis (Settings, Rules, And Indicator)](https://therobusttrader.com/donchian-channel-trading-strategies/)
+
+[🠉](#table-of-contents)
+
+#### Dynamic volume Histogram
 
 [🠉](#table-of-contents)
 
@@ -305,6 +389,10 @@ Employs three moving averages with different timeframes to reduce false signals 
 
 [🠉](#table-of-contents)
 
+#### Volume Weighted Average Price
+
+[🠉](#table-of-contents)
+
 #### Williams Percent Range
 
 - [How to Use Williams %R (Williams Percent Range)](https://www.babypips.com/learn/forex/williams-r)
@@ -334,66 +422,17 @@ Employs three moving averages with different timeframes to reduce false signals 
 
 [🠉](#table-of-contents)
 
-### Options
-
-This section contains information about options and links:
-
-- [Overview](#overview)
-- [Articles and Websites on option trading](#articles-and-websites-on-option-trading)
-- [Option platforms](#option-platforms)
-- [Option libraries](#option-libraries)
-
-[🠉](#table-of-contents)
-
-#### Overview
-
-- American options may exercise at any time before the option expires.
-- European options can only be exercised at expiration.
-- All stocks and exchange-traded funds have American-style options.
-- A few broad-based equity indices, including the S&P 500, have European-style options.
-- American index options stop trading at the close of business on the third Friday of the expiration month, with a few exceptions. See [U.S. Securities and Exchange Commission. "Investor Bulletin: An Introduction to Options."](https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-63). Some options are quarterlies and they trade until the last trading day of the calendar quarter. Weeklies cease trading on Wednesday or Friday of the specified week.
-- European index options stop trading one day earlier, at the close of business on the Thursday preceding the third Friday of the expiration month.
-- Investors can unwind both styles of option positions by selling it before its expiry though there could be a gain or loss between the premiums paid and received.
-
-[🠉](#table-of-contents)
-
-#### Articles and Websites on option trading
-
-- [Tasty Live](https://www.tastylive.com/)
-- [The Options Industry Council](https://www.optionseducation.org/)
-- [OCC Learning](https://www.optionseducation.org/theoptionseducationcenter/occ-learning)
-- [Options Contract: What It Is, How It Works, Types of Contracts (Investopedia)](https://www.investopedia.com/terms/o/optionscontract.asp#toc-what-is-an-options-contract)
-- [Option Greeks: The 4 Factors to Measure Risk (Investopedia)](https://www.investopedia.com/trading/getting-to-know-the-greeks/)
-- [How To Trade Options with Alpaca's Dashboard and Trading API (alpaca)](https://alpaca.markets/learn/how-to-trade-options-with-alpaca)
-- [A Guide to Algorithmic Options Trading (alpaca)](https://alpaca.markets/learn/a-guide-to-algorithmic-options-trading)
-- [Emotionless Option Trading: A Guide for Algo Traders and Developers (alpaca)](https://alpaca.markets/learn/emotionless-option-trading)
-- [Options Backtesting in Python: An Introductory Walkthrough](https://pipekit.io/blog/options-backtesting-in-python-an-introductory-walkthrough)
-- [Option Greeks: What They Are and How They Can Be Used in Algorithmic Trades (alpaca)](https://alpaca.markets/learn/option-greeks)
-- [Options Backtesting: How to Backtest with Alpaca's Trading API (with Python Examples)](https://alpaca.markets/learn/backtesting-your-options-trading-strategies)
-- [Vibe Coding Tutorial: How to Build Options Trading Algorithms with Alpaca’s MCP Server & Cursor AI](https://alpaca.markets/learn/vibe-coding-how-to-build-options-trading-algorithms-with-alpacas-mcp-server-cursor-ai)
-- [How a College Student Learned About Options Trading - Part 1](https://alpaca.markets/learn/how-a-college-student-learned-about-options-trading-part-1)
-- [How a College Student Learned About Options Trading - Part 2](https://alpaca.markets/learn/how-a-college-student-learned-about-options-trading-part-2)
-
-[🠉](#table-of-contents)
-
-#### Option platforms
-
-- [ORATS](https://orats.com/) - Online options platform - could be expensive
-- [Option Trading (Alpaca)](https://docs.alpaca.markets/docs/options-trading)
-
-[🠉](#table-of-contents)
-
-#### Option libraries
-
-- [OptionSuite](https://github.com/sirnfs/OptionSuite/) - Option / stock strategy backtester and live trader* framework.
-- [Optopsy](https://github.com/michaelchu/optopsy) - backtesting and statistics library for option strategie
-- [OptPricing: A Quantitative Finance Library for Derivative Pricing and Analysis](https://diljit22.github.io/optpricing/)
-- [mibian](https://pypi.org/project/mibian/) - PYPI
-- [MibianLib - Options Pricing Open Source Library](https://github.com/yassinemaaroufi/MibianLib?tab=readme-ov-file)
-
-[🠉](#table-of-contents)
-
 ### Option Strategies
+
+#### General
+
+##### Option Strategy Overview
+
+![Option Strategy Overview](./OptionStrategyOverview.jpg "Option Strategy Overview")
+
+##### Option Strategy Table
+
+![Option Strategy Table](./OptionStrategyTable.jpg "Option Strategy Table")
 
 General option strategies:
 
@@ -496,30 +535,6 @@ Specific option startegies:
 
 [🠉](#table-of-contents)
 
-### Performance Measuring Methods
-
-[🠉](#table-of-contents)
-
-### Backtesting
-
-- [AlgoTrading101 - Build a custom backtester with Python](https://algotrading101.com/learn/build-my-own-custom-backtester-python/)
-- [algotrading101](https://algotrading101.com/learn/backtesting-py-guide/)
-- [Trading-Backtester](https://github.com/madamskip1/trading-backtester/tree/master)
-- [Introduction to Backtesting with VectorBT](https://alpaca.markets/learn/introduction-to-backtesting-with-vectorbt)
-- [Options Backtesting: How to Backtest with Alpaca's Trading API (with Python Examples)](https://alpaca.markets/learn/backtesting-your-options-trading-strategies)
-
-[🠉](#table-of-contents)
-
-### Python libraries
-
-- [TA-Lib for python](https://pypi.org/project/TA-Lib/)
-- [pandas-ta](https://pypi.org/project/pandas-ta/)
-- [polars-talib](https://pypi.org/project/polars-talib/)
-- [ta-lib Pattern Recognition Functions](https://github.com/TA-Lib/ta-lib-python/blob/master/docs/func_groups/pattern_recognition.md)
-- [OptPricing: A Quantitative Finance Library for Derivative Pricing and Analysis](https://diljit22.github.io/optpricing/)
-
-[🠉](#table-of-contents)
-
 ## Database
 
 The databases is in PostgreSQL.
@@ -531,7 +546,7 @@ They are:
 
 Each database has two schemas:
 
-- [polygon](#polygon) - provider specific database thta is used as a staging database.
+- [polygon](#polygon) - provider specific database that is used as a staging database.
 - [securities](#securities) - the main schema for the system.
 
 ### polygon
@@ -542,18 +557,18 @@ Data is downloaded from the polygon website into the polygon schema. The require
 
 ### securities
 
-Alocal database containing all the data for the system.
+A local database containing all the data for the system.
 
 [🠉](#table-of-contents)
 
 ## Projects
 
-There are three projects:
+There are four projects:
 
 - [securities_load](#securities-load) - ETL of option data and api to access the data in the database
 - [trading_formations](#trading-formations) - code to identify candlesticks and patterns, and option calculations
 - [securities_notebooks](#securities-notebooks) - notebooks and code for backtesting etc. and a dashboard to analyse stocks
-- [polars_backtesting_engine](#polars-backtesting-engine) - backtesting using polars dataframes
+- [polars_backtesting_engine](#polars-backtesting-engine) - backtesting using polars dataframes (a work in progress)
 
 [🠉](#table-of-contents)
 
@@ -598,7 +613,9 @@ This library acts as the front-end code repository for the system. It contains t
 
 ### Polars Backtesting Engine
 
-A internal backtesting engine that users polars dataframes/
+A internal backtesting engine that users polars dataframes.
+
+[🠉](#table-of-contents)
 
 ## Front-Ends
 
@@ -640,79 +657,238 @@ To start the dashboard:
 
 [🠉](#table-of-contents)
 
-## TODO
+## Education
 
-- Clean up notebooks in securities_notebooks
-- Put trading _formations under polars_backtesting_engine
-- Get polars_backtesting_engine working
-- Create lots of notebooks for option trading using alpaca
+### Options
+
+This section contains information about options and links:
+
+- [Overview](#overview)
+- [Articles and Websites on option trading](#articles-and-websites-on-option-trading)
+- [Option platforms](#option-platforms)
+- [Option libraries](#option-libraries)
 
 [🠉](#table-of-contents)
 
-## My Filters
+#### Overview
 
-- No Filter (Baseline Case)
-- RSI (Relative Strength Index)
-- [ADX (Average Directional Index)](#adx-average-directiona-index)
-- Close above average close
-- Moving Average Slope
-- Williams %R
-- Stochastics
-- 2 Bar RSI
+##### Basics
 
-### ADX (Average Directiona Index)
+![Options Basics](./OptionsBasics.jpg "Options Basics")
 
-```python
-If FILTER = 2 Then begin //ADX Filter
-    FilterLong = ADX(14) > InputVar2*1.5
-    FilterShort = ADX(14) < InputVar2*1.5
-If ENTRY = 1 then Begin
-    if marketposition=0 and FilterLong and close -close[InputVar1] crosses above 0 then buy next bar at market
-```
+##### Courses
 
-## My Strategies
+[ASX Options course](https://www.asx.com.au/investors/investment-tools-and-resources/online-courses/options-course-quiz)
 
-- [Bullish Trend Following with Alpaca and Options](#bullish-trend-following-with-alpaca-and-options)
-- [Selling a 45-day 12-delta put on the E-mini S&P 500 ( /ES ) and taking profits at 50%](#selling-a-45-day-12-delta-put-on-the-e-mini-sp-500--es--and-taking-profits-at-50)
+##### Short Straddles, Strangles, Iron Condors and Butterflies
 
-### Bullish Trend Following with Alpaca and Options
+![Short Straddle Strangle Iron Condor Butterfly](./strangleetc.jpg "Short Straddle Strangle Iron Condor Butterfly")
 
-- Market direction
-- Sector Direction
-- Best Stock
-- Entry Point
-- Select option strategy
-- Select options
-- Calculate stop loss
-- Calculate take profit
-- Buy options
-- Place take profit order
-- Monitor trade
-  
-  - Close trade to take profit or minimise loss
+##### Terms
 
-- Document trade
+- Option Type: Calls/Puts
+- Option Style: American/European - see below
+- Option Class and Series:
+  - Class - An option class refers to options of the same type and style with the same underlying stock
+  - Series - The option series extends the class definition by adding in exercise strike price and an expiration
+- Underlying Security: Options derive their value from and are linked to an underlying financial instrument.
+- Unit of Trade: Number of shares exchanged when and if the buyer chooses to exercise their contract (usually 100).
+- Exercise (Strike) Price: is the per share price at which the buyer has the right or the seller the obligation to receive or deliver shares, assuning a standard 100 share contract.
+- Expiration Date: The maturity date of the contract.
 
-### Selling a 45-day 12-delta put on the E-mini S&P 500 ( /ES ) and taking profits at 50%
+- Buyer / Purchaser / Holder / Owner - Long / Owns
+- Seller / Writer - Short
 
-Stock must be moving up.
+- Opening Transaction - Creating or increasing position - Can be purchase (long) or sale (short)
+- Closng Transaction  - Elimination or reducing position - Can be purchase or sale
 
-#### The Trade
+- Bid - Price a Buyer of an option is willing to pay
+- Ask / Offer - Price Seller is willing to accept
 
-1. Trade symbol /ES in your broker (E-mini S&P 500 futures contract) (Option on a futures contract)
-   1. Could also use the Micro E-mini /MES. Try using SPY (SPDR S&P 500 ETF Trust) or QQQ (Invesco QQQ Trust) or SPX (S&P 500 Index)/XSP (S&P 500 MINI SPX OPTIONS INDEX).
-2. Select expiration 45 days out
-3. Select .12 Delta
-4. Sell the put at the .12 Delta
-5. Take profit GTC at 50% of Credit Received
+##### American / European
 
-#### Risk
+![European vs American Style Exercise](./EuropeanVSAmericanStyleExercise.jpg "European vs American Style Exercise")
 
-1. Take profit at 50%
-2. Close trade at 21 days; regardless of profit or loss
-3. Keep trade size small
+- American options may exercise at any time before the option expires.
+- European options can only be exercised at expiration.
+- All stocks and exchange-traded funds have American-style options.
+- A few broad-based equity indices, including the S&P 500, have European-style options.
+- American index options stop trading at the close of business on the third Friday of the expiration month, with a few exceptions. See [U.S. Securities and Exchange Commission. "Investor Bulletin: An Introduction to Options."](https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-63). Some options are quarterlies and they trade until the last trading day of the calendar quarter. Weeklies cease trading on Wednesday or Friday of the specified week.
+- European index options stop trading one day earlier, at the close of business on the Thursday preceding the third Friday of the expiration month.
+- Investors can unwind both styles of option positions by selling it before its expiry though there could be a gain or loss between the premiums paid and received.
 
-## Stocks, Indices and ETFs
+[🠉](#table-of-contents)
+
+##### Synthetic Relationships
+
+| Original Position | v | Synthetic Equivalent |
+| :---------------: | :-: | :-------------------: |
+| Long stock | = | Long call + Short put |
+| Short stock | = | Short call + Long put |
+| Long call | = | Long stock + Long put |
+| Short call | = | Short stock + Short put |
+| Long put | = | Short stock + Long put |
+| Short put | = | Long stock + Short put |
+
+[🠉](#table-of-contents)
+
+#### Greeks
+
+All the Greeks only affect the extrinsic (time) value of the option.
+
+- [Delta](#delta): A theoretical estimate of how much an option's price may change given a $1 move in the underlying. Range: -1.00 to 1.00
+- [Gamma](#gamma): The rate of change of Delta. Range 0 to 1.00. Positive for long options and negative for short options
+- [Theta](#theta) (Time Decay): Measures the loss of time and quantifies it in dollars and cents. Negative and effects calls and puts equally.
+- [Vega](#vega): Measures the pricing impact of a 1% change in implied volatility.
+- [Rho](#rho): Measure of an option's sensitivity to interest rate changes.
+- [All Greeks Together](#all-greeks-together)
+
+[🠉](#table-of-contents)
+
+##### Delta
+
+- Delta is the "speed" at which the price of an option moves in relation to the stock.
+- Calls have a positive relationship to stock with a Delta of zero to +1.00.
+- Puts have a negative relationship to stock with a Delta of -1.00 to Zero.
+- Investors can "net" Deltas for complex trades such as spreads to determine the overal Delta position,
+- Deltas represent directional risk and can be used to calculate offsetting stock to hedge a position.
+- Some investors use Delta to estimate the probabiliyy of a contract finsishing ITM.
+- Delta is affected by time and implied volatility. As those factors change, so will Delta.
+
+As a result of the synthetic relationship:
+
+```Call Delta + Put Delta = 1.00```
+
+| Straetgy | Positive Deltas | Negative Deltas |
+| :-: | :-: | :-: |
+| Buy Calls | `[x]` | |
+| Sell Calls | | `[x]` |
+| Buy Puts | | `[x]` |
+| Sell Puts | `[x]` | |
+
+[🠉](#table-of-contents)
+
+##### Gamma
+
+- Gamma is the rate of change of Delta or the "acceleration" of the option relative to the stock.
+- Gamma is represented as a decimal from zero to 1.00 and is highest, or has the greatest effect, on at-the-money options, especially those about to expire.
+- Long options, either calls or puts, always yield positive Gamma.
+- Short calls and short puts will have negative Gamma
+- Positive Gamma has a positive correlation between the directional change of the share price and the directional change of Delta, while negative Gamma has a negative correclation.
+- As expiration nears:
+  - Gamma of ATM calls and puts **increases**
+  - Gamma of ITM and OTM calls and puts **decreases**.
+- Gamma is greatest around the ATM strikes of near-term options with low volatility.
+- Gamma scalping is a way for option buyers to potentially reduce the effect of time decay by buying/selling chares of stock to manage Deltas.
+- A Gamma squeeze is an aspect of high volatility stocks whereby call sellers repeatedly manage the position by scalping stocks for losses.
+
+[🠉](#table-of-contents)
+
+##### Theta
+
+- Theta is the Greek that quantifies the value lost in an options contract as each day passes (time decay).
+- Theta will be greater for short-term contracts than long-term contracts.
+- Theata is always greatest for near-term ATM options.
+- Though Theta is always negative, it positively impacts option selllers and negatively impacts option buyers.
+- Time decay is not linear; rather, it accelerates as expiration nears, eating away at the value of the option more and more each day, especially in the days leading up to expiration.
+
+[🠉](#table-of-contents)
+
+##### Vega
+
+- Vega measures the pricing impact of a 1% change in implied volatility.
+- It is expected that the option's value will increase or decrease by Vega for every 1% increase or decrease in IV.
+- Option buyers have positive Vega, and option sellets have negative Vega.
+- ATM contracts are more sensitive to changes in IV and therefore, have a higher Vega than ITM/OTM contracts.
+- Long-term options are impacted more significantly by changes in IV and have greater Vega than short-term options.
+
+[🠉](#table-of-contents)
+
+##### Rho
+
+- Rho measures the impact on an option's premium resulting from a 1% change in interest rates
+- Long calls and short puts have positive Rho, while long puts and short calls have negative Rho.
+- Long-term contracts are more significantly impacted by changes in interest rates than short-term contracts and therefore, have a higher sensitivity to Rho.
+
+[🠉](#table-of-contents)
+
+##### All Greeks Together
+
+Delta is the expected change in an option's value based on a $1 change in the underlying stock price. For example, for a call option with a .35 Delta, a $1 increase in the price of the underlying stock would typically result in the price of a call to increase by $.35 and the price of a put to decrease by $.35, all other factors remaining constant.
+
+Gamma is the expected change in an option's Delta based on a $1 change in the underlying stock price. For example, for a call otionwitha .35 Delta and a Gamma of .11, a $1 increase in the price of the underlying stock would result in a new Delta of .46, all other factors remaining constant.
+
+Theta is the expected change in an option's value with the passage of time. For an option with a Theta value of -.05, it would be expected that the contract would "decay" in value by $.05 from one day to the next, all other factors remaining constant.
+
+Vega is the expected change in an option's value based on a 1% change in the in that contract's implied volatility. For an option valued at $1.25 and with an implied volatility of 30% and a Vega of .05, if implied volatility were to increase to 31%, it would be expected that the option value would increase to $1.30, all other factors remaining constant.
+
+Rho is the expected change in an option's value based on a 1% change in interest rates. If interest rates were to increase by 1%, call prices would increase and put prices would decrease by the amount of Rho, all other factors remaining constant.
+
+[🠉](#table-of-contents)
+
+#### Volatility
+
+Volatility is a statistical data set that measures pricing swings over time.
+
+Volatility does not indicate direction but rather measures by how much or how little current prices deviate from average prices for a specified period of time.
+
+Historical volatility is an observable "rear-view mirror" look at pricing changes in a particular stock or market index as it statistically measures pricing swings over a given period of time that has already occured.
+
+Many investors use historical volatility as a gauge to determine whether current volatility is "cheap or expensive".
+
+IV represents the expected change in value of the underlying security as it correlates to the price of the option.
+
+Investors can use the "Rule of 16" to determine the exopected daily move of the underlying stock.
+
+Investrors can compare current IV levels to the stock's HV in order to determine if current option prices are "cheap or expensive".
+
+Vega is the Greek most impacted by changes in IV. For every 1% change in IV, the option's price will typically change by the Vega amount.
+
+**Historical implied volatility** tracks the dynamic and fluctuating implied volatility assumptions resulting from past changes in supply and demand over a given time.
+
+The statistical concept of reversion to the mean hypothesises that a s data set which varies from its long-term average will return, in time, to that average and is often employed in volatility trading startegies.
+
+**IV rank** tells investors where current IV is in relation to the IV range over the course of the past 12 months.
+
+**IV percentile** tells investors what percentage of days the IV has been lower than the current IV level.
+
+[🠉](#table-of-contents)
+
+#### Articles and Websites on option trading
+
+- [Tasty Live](https://www.tastylive.com/)
+- [The Options Industry Council](https://www.optionseducation.org/)
+- [OCC Learning](https://www.optionseducation.org/theoptionseducationcenter/occ-learning)
+- [Options Contract: What It Is, How It Works, Types of Contracts (Investopedia)](https://www.investopedia.com/terms/o/optionscontract.asp#toc-what-is-an-options-contract)
+- [Option Greeks: The 4 Factors to Measure Risk (Investopedia)](https://www.investopedia.com/trading/getting-to-know-the-greeks/)
+- [How To Trade Options with Alpaca's Dashboard and Trading API (alpaca)](https://alpaca.markets/learn/how-to-trade-options-with-alpaca)
+- [A Guide to Algorithmic Options Trading (alpaca)](https://alpaca.markets/learn/a-guide-to-algorithmic-options-trading)
+- [Emotionless Option Trading: A Guide for Algo Traders and Developers (alpaca)](https://alpaca.markets/learn/emotionless-option-trading)
+- [Options Backtesting in Python: An Introductory Walkthrough](https://pipekit.io/blog/options-backtesting-in-python-an-introductory-walkthrough)
+- [Option Greeks: What They Are and How They Can Be Used in Algorithmic Trades (alpaca)](https://alpaca.markets/learn/option-greeks)
+- [Options Backtesting: How to Backtest with Alpaca's Trading API (with Python Examples)](https://alpaca.markets/learn/backtesting-your-options-trading-strategies)
+- [Vibe Coding Tutorial: How to Build Options Trading Algorithms with Alpaca’s MCP Server & Cursor AI](https://alpaca.markets/learn/vibe-coding-how-to-build-options-trading-algorithms-with-alpacas-mcp-server-cursor-ai)
+- [How a College Student Learned About Options Trading - Part 1](https://alpaca.markets/learn/how-a-college-student-learned-about-options-trading-part-1)
+- [How a College Student Learned About Options Trading - Part 2](https://alpaca.markets/learn/how-a-college-student-learned-about-options-trading-part-2)
+
+[🠉](#table-of-contents)
+
+#### Option platforms
+
+- [ORATS](https://orats.com/) - Online options platform - could be expensive
+- [Option Trading (Alpaca)](https://docs.alpaca.markets/docs/options-trading)
+
+[🠉](#table-of-contents)
+
+#### Option libraries
+
+- [OptionSuite](https://github.com/sirnfs/OptionSuite/) - Option / stock strategy backtester and live trader* framework.
+- [Optopsy](https://github.com/michaelchu/optopsy) - backtesting and statistics library for option strategie
+- [OptPricing: A Quantitative Finance Library for Derivative Pricing and Analysis](https://diljit22.github.io/optpricing/)
+- [mibian](https://pypi.org/project/mibian/) - PYPI
+- [MibianLib - Options Pricing Open Source Library](https://github.com/yassinemaaroufi/MibianLib?tab=readme-ov-file)
+
+[🠉](#table-of-contents)
 
 ### Indices
 
@@ -733,20 +909,109 @@ Index options are AM (Monthly) or PM (Weekly) settled, European style and cash d
   - Oldest, most well-known, and frequently used index in the world
   - Represents about a quarter of the value of the entire U.S. stock market
 
+| Index | Settlement Symbol | Description |
+| :---- | :---------------- | :---------- |
+| SPX | SET | S&P 500 |
+| NDX | XQO | Nasdaq 100 |
+| DJX | DJS | Dow Jones Industrial Average |
+| RUT | RLS | Russell 2000 |
+
 ### ETF's
 
-ETF options are PM settled, American style and physical delvery.
+ETF options are PM settled, American style and physical delivery.
 
-| Index | ETF | ETF Trust | Contract size of ETF |
-| :---- | :-- | :-------: | :------------------: |
-| SPX | SPY | SPDR S&P 500 ETF | 1/10th of SPX |
-| NDX | QQQ | Invesco QQQ Trust | 1/40th of NDX |
-| RUT | IWM | iShates Russell 2000 ETF | 1/10th of RUT |
-| DJX | DIA | Dow Jones Industrial Average ETF | 1/100th of DJIA |
+| ETF | Description |
+| :-- | :---------- |
+| SPY | SPDR S&P 500 ETF |
+| QQQ | Invesco QQQ Trust |
+| IWM | iShares Russell 2000 ETF |
+| DIA | Dow Jones Industrial Average ETF |
+| SMH | VanEck Semiconductor ETF |
+| EEM | iShares MSCI Emerging Markets ETF |
+| EFA | iShares MSCI European, Australasia and the Far East ETF |
+| XOP | State Street SPDR S&P Oil & Gas Exploration & Production ETF |
+| XLE | State Street Energy Select Sector SPDR ETF |
+| GLD | SPDR Gold Shares ETF |
+| GDX | VanEck Gold Miners ETF |
+
+### Indces vs ETFs
+
+| Index | ETF | Contract size of ETF |
+| :---- | :-- | :------------------: |
+| SPX | SPY | 1/10th of SPX |
+| NDX | QQQ | 1/40th of NDX |
+| RUT | IWM | 1/10th of RUT |
+| DJX | DIA | 1/100th of DJIA |
 
 ### VIX
 
+### Stocks
+
+- Large-cap Market cap of $10 billion or more
+- Mid-cap Market cap of $20 billion to $10 billion
+- Small-cap Market cap below $2 billion
+
+### Futures
+
+| Symbol | Description |
+| :----- | :---------- |
+| /CL:XNYM | Light, Sweet Crude Oil |
+| /GC:XNYM | Gold |
+| /SI:XNYM | Silver |
+
+[🠉](#table-of-contents)
+
+## Backtesting
+
+### Performance Measuring Methods
+
+[🠉](#table-of-contents)
+
+### Backtesting Libraries
+
+- [AlgoTrading101 - Build a custom backtester with Python](https://algotrading101.com/learn/build-my-own-custom-backtester-python/)
+- [algotrading101](https://algotrading101.com/learn/backtesting-py-guide/)
+- [Trading-Backtester](https://github.com/madamskip1/trading-backtester/tree/master)
+- [Introduction to Backtesting with VectorBT](https://alpaca.markets/learn/introduction-to-backtesting-with-vectorbt)
+- [Options Backtesting: How to Backtest with Alpaca's Trading API (with Python Examples)](https://alpaca.markets/learn/backtesting-your-options-trading-strategies)
+
+[🠉](#table-of-contents)
+
+### Python libraries
+
+- [TA-Lib for python](https://pypi.org/project/TA-Lib/)
+- [pandas-ta](https://pypi.org/project/pandas-ta/)
+- [polars-talib](https://pypi.org/project/polars-talib/)
+- [ta-lib Pattern Recognition Functions](https://github.com/TA-Lib/ta-lib-python/blob/master/docs/func_groups/pattern_recognition.md)
+- [OptPricing: A Quantitative Finance Library for Derivative Pricing and Analysis](https://diljit22.github.io/optpricing/)
+
 ## Helpful Links
 
+- [Vector-Based vs Event-Based Backtesting](https://www.interactivebrokers.com/campus/ibkr-quant-news/a-practical-breakdown-of-vector-based-vs-event-based-backtesting/) - has great example code for each type of backtesting
 - [Mermaid Flowcharts in Markdown](https://mermaid.js.org/syntax/flowchart.html)
 - [Markdown Cheat Sheet](https://markdowncheatsheet.com/reference)
+- [Part Time Larry](https://www.youtube.com/@parttimelarry/videos)
+  - [Interactive Brokers TWS API + TradingView Charts Python Tutorial (Updated)](https://www.youtube.com/watch?v=ZEtsLuXdC-g)
+  - [Interactive Brokers Web API [Part 1] - Docker Tutorial](https://www.youtube.com/watch?v=CRsH9TKveLo)
+  - [Interactive Brokers Web API [Part 2] - Python Tutorial](https://www.youtube.com/watch?v=r9w8lmhQuSk)
+  - [Interactive Brokers Web API [Part 3] - Web App Tutorial](https://www.youtube.com/watch?v=NbfrAnn_7BQ)
+  - [Public Trading API - First Impressions](https://www.youtube.com/watch?v=tXYwFsfWK9M)
+  - [Backtesting.py (1/2) - Backtest Trading Strategies in Python](https://www.youtube.com/watch?v=T3PT4eV8xFU&t=221s)
+  - [Backtesting.py (2/2) - Intraday ORB Strategy in Python](https://www.youtube.com/watch?v=HXxHunu_Hkk)
+  - [Automating Investment Research with Perplexity Finance - Tasks, Alerts, Earnings](https://www.youtube.com/watch?v=AxjlzV2maIs)
+  - [Interactive Brokers API with Python and ib_async](https://www.youtube.com/watch?v=EYDLlnmM5x8)
+  - [ORB Strategy in Python with IBKR API and ib_async](https://www.youtube.com/watch?v=a1813iCcsWQ)
+  - [Real-Time Market Scanners, Stocks in Play with Python, IBKR API, and ib_async](https://www.youtube.com/watch?v=S9vxHNv_b8E)
+  - [Full Stack IBKR API (1/4): TradingView Chart Integration](https://www.youtube.com/watch?v=RT0Wt9G7aAo)
+  - [Full Stack IBKR API (2/4): Real-Time Streaming Data, SSE](https://www.youtube.com/watch?v=u5O7cbt2MKc)
+  - [Full Stack IBKR API (3/4): Web-Based Scanner](https://www.youtube.com/watch?v=YPowJTygyUI)
+  - [Full Stack IBKR API (4/4): TradingView Webhooks with Interactive Brokers](https://www.youtube.com/watch?v=0CySbeoj6hw)
+
+## TODO
+
+- Clean up notebooks in securities_notebooks
+- Put trading_formations under polars_backtesting_engine
+- Get polars_backtesting_engine working
+- Create lots of notebooks for option trading using alpaca
+
+[🠉](#table-of-contents)

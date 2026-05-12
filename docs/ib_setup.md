@@ -1,0 +1,44 @@
+- Setup TWS API
+  - Download the latest Windows version of the TWS API
+  - Open the downloaded .msi file
+  - Install it in C:\TWS API\
+- Setup VS Code
+  - Create a folder in C:\projects called ib-trading
+  - Open VS Code
+  - Select File --> Open Folder and open folder c:\projects\ib-trading
+  - Create a virtual environment
+    - Ctrl + Shift + P to open commands
+    - Select Python : Create envorpnment ...
+    - Select venv
+    - Select Python 1.12
+    - Accept name .venv
+    - Skip package installation
+    - In IB-TRADING create a file app.py
+    - Open the Terminal with Ctrl + ~
+    - Make sure the python environment .venv is activated.
+  - Install TWS API python
+    - In the terminal change to `'c:\tws api\source\pythonclient'`
+    - Install setuptools with `pip install setuptools`
+    - Install TWS API python with `python setup.py install`
+    - Change back to `c:\projects\ib-trading` with `cd c:\projects\ib-trading`
+    - To test the TWS API python installation
+      - Add `from ibapi.client import EClient` and `from ibapi.wrapper import EWrapper` to app.py
+      - Run the app with `python app.py`. If it runs with no errors all is good.
+    - Note that the python source is in `C:\TWS API\source\pythonclient\ibapi\`
+    - Note that the python samples are in `C:\TWS API\samples\Python\Testbed\`
+  - Install bn-lightweight-charts with `pip install bn-lightweight-charts`
+  - When I ran `python app.py` I got the error `ModuleNotFoundError: No module named 'google'`
+    - Had to install google api python client with `pip install --upgrade google-api-python-client` to solve it.
+
+- Executing the app
+  - Got the error `TypeError: IBClient.error() takes 5 positional arguments but 6 were given` when running app.py
+    - Edited app.py to include errorTime in `def error(self, req_id, errorTime, code, msg, misc):`
+
+- For bn-lightweight-charts need to install python webview package.
+  - To install webview need Microsoft Visual C++ 14.0 or greater
+  - To download Visual Studio Build Tools for C++ go to `https://visualstudio.microsoft.com/visual-cpp-build-tools/` and download it.
+  - Run vs_BuildTools.exe it will set up the Visual Studio Installer
+    - Select Microsoft Visual C++ 14.0 and install it.
+  - Use `pip install webview` to install webview. Didn't work.
+  - Tried `pip install webview-python`. Didn't work.
+  - Tried `pip install pywebview`. It worked. Not sure if just pywebview will work or not.
