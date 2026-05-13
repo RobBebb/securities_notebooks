@@ -19,7 +19,7 @@
   - [securities](#securities)
 - [Projects](#projects)
   - [Securities Load](#securities-load)
-  - [Trading Formations](#trading-formations)
+  - [Trading Utilities](#trading-utilities)
   - [Securities Notebooks](#securities-notebooks)
   - [Polars Backtesting Engine](#polars-backtesting-engine)
 - [Front-Ends](#front-ends)
@@ -37,7 +37,10 @@
 - [Backtesting](#backtesting)
   - [Performance Measuring Methods](#performance-measuring-methods)
   - [Backtesting Libraries](#backtesting-libraries)
-  - [Python libraries](#python-libraries)
+- [Python libraries](#python-libraries)
+  - [Indicators and Patterns](#indicators-and-patterns)
+  - [Option libraries](#option-libraries)
+- [Option platforms](#option-platforms)
 - [Helpful Links](#helpful-links)
 - [TODO](#todo)
 
@@ -566,7 +569,7 @@ A local database containing all the data for the system.
 There are four projects:
 
 - [securities_load](#securities-load) - ETL of option data and api to access the data in the database
-- [trading_formations](#trading-formations) - code to identify candlesticks and patterns, and option calculations
+- [trading_utilities](#trading-utilities) - code to identify candlesticks, stock utilities and option utilities
 - [securities_notebooks](#securities-notebooks) - notebooks and code for backtesting etc. and a dashboard to analyse stocks
 - [polars_backtesting_engine](#polars-backtesting-engine) - backtesting using polars dataframes (a work in progress)
 
@@ -590,9 +593,39 @@ There are four cron jobs that are run regularly:
 
 [🠉](#table-of-contents)
 
-### Trading Formations
+### Trading Utilities
 
-This project contains candlestick recognition classes and option utilities.
+This project contains candlestick recognition classes, stock utilities and option utilities.
+
+The candlestick patterns are:
+
+| Candlestick Pattern |
+| :-----------------: |
+| bearish engulfing |
+| bearish harami |
+| bullish engulfing |
+| bullish harami |
+| dark cloud cover |
+| evening star |
+| hammer |
+| hanging man |
+| morning star |
+| piercing |
+| three inside down |
+| three inside up |
+| three outside down |
+| three outside up |
+
+The option utilities are:
+
+- calculate_time_to_expiry
+- the greeks - delta, vega, rho, gamma, theta
+- black scholes value
+- payoff
+
+The stock utilities are:
+
+- calculate daily volatility (also returns the annualized volatility which is used to calculate the greeks)
 
 [🠉](#table-of-contents)
 
@@ -873,23 +906,6 @@ The statistical concept of reversion to the mean hypothesises that a s data set 
 
 [🠉](#table-of-contents)
 
-#### Option platforms
-
-- [ORATS](https://orats.com/) - Online options platform - could be expensive
-- [Option Trading (Alpaca)](https://docs.alpaca.markets/docs/options-trading)
-
-[🠉](#table-of-contents)
-
-#### Option libraries
-
-- [OptionSuite](https://github.com/sirnfs/OptionSuite/) - Option / stock strategy backtester and live trader* framework.
-- [Optopsy](https://github.com/michaelchu/optopsy) - backtesting and statistics library for option strategie
-- [OptPricing: A Quantitative Finance Library for Derivative Pricing and Analysis](https://diljit22.github.io/optpricing/)
-- [mibian](https://pypi.org/project/mibian/) - PYPI
-- [MibianLib - Options Pricing Open Source Library](https://github.com/yassinemaaroufi/MibianLib?tab=readme-ov-file)
-
-[🠉](#table-of-contents)
-
 ### Indices
 
 Cannot trade indices, although you can trade financial products like options, futures and ETFs which have similar risk profiles and characteristics as the indices.
@@ -969,21 +985,48 @@ ETF options are PM settled, American style and physical delivery.
 
 ### Backtesting Libraries
 
-- [AlgoTrading101 - Build a custom backtester with Python](https://algotrading101.com/learn/build-my-own-custom-backtester-python/)
-- [algotrading101](https://algotrading101.com/learn/backtesting-py-guide/)
-- [Trading-Backtester](https://github.com/madamskip1/trading-backtester/tree/master)
+- [AlgoTrading101 - Build a custom backtester with Python](https://algotrading101.com/learn/build-my-own-custom-backtester-python/). Refer to project **backtester** for code from the site.
+- [algotrading101 - An Introductory Guide to Backtesting with Python](https://algotrading101.com/learn/backtesting-py-guide/)
+- [Trading-Backtester - A Python library for backtesting trading strategies.](https://github.com/madamskip1/trading-backtester/tree/master). Refer to project **trading-backtester** which contains the code.
 - [Introduction to Backtesting with VectorBT](https://alpaca.markets/learn/introduction-to-backtesting-with-vectorbt)
+- [Build a Backtesting Framework in Python from Scratch](https://mayerkrebs.com/building-a-backtesting-framework-in-python-from-scratch/) site no longer exists. Refer to project **backtesting_engine** for code from the site. Project **backtesting_engine2** is the start of a backtester for multiple symbols.
+- Project **polars_backtesting_engine** is a project I am writing to cater for polars databases. It is based off *BacktestPro* and *Trading-Backtester*.
+- [BacktestPro - github repository](https://github.com/anthol42/backtestPro) Feature rich backtesting framework.
+- [BacktestPro - Documentation](https://anthol42.github.io/backtestpro/)
 - [Options Backtesting: How to Backtest with Alpaca's Trading API (with Python Examples)](https://alpaca.markets/learn/backtesting-your-options-trading-strategies)
 
 [🠉](#table-of-contents)
 
-### Python libraries
+## Python libraries
+
+### Indicators and Patterns
 
 - [TA-Lib for python](https://pypi.org/project/TA-Lib/)
 - [pandas-ta](https://pypi.org/project/pandas-ta/)
 - [polars-talib](https://pypi.org/project/polars-talib/)
-- [ta-lib Pattern Recognition Functions](https://github.com/TA-Lib/ta-lib-python/blob/master/docs/func_groups/pattern_recognition.md)
+- [ta-lib Pattern Recognition Functions - Candlesticks](https://github.com/TA-Lib/ta-lib-python/blob/master/docs/func_groups/pattern_recognition.md)
+- [PatternPy ]
+
+[🠉](#table-of-contents)
+
+### Option libraries
+
+- [OptionSuite](https://github.com/sirnfs/OptionSuite/) - Option / stock strategy backtester and live trader* framework.
+- [Optopsy](https://github.com/michaelchu/optopsy) - backtesting and statistics library for option strategie
 - [OptPricing: A Quantitative Finance Library for Derivative Pricing and Analysis](https://diljit22.github.io/optpricing/)
+- [mibian](https://pypi.org/project/mibian/) - PYPI
+- [MibianLib - Options Pricing Open Source Library](https://github.com/yassinemaaroufi/MibianLib?tab=readme-ov-file)
+- [vollib - Python library for calculating option prices, implied volatilities and greeks](https://pypi.org/project/vollib/)
+- [vollib - Home](https://vollib.org)
+
+[🠉](#table-of-contents)
+
+## Option platforms
+
+- [ORATS](https://orats.com/) - Online options platform - could be expensive
+- [Option Trading (Alpaca)](https://docs.alpaca.markets/docs/options-trading)
+
+[🠉](#table-of-contents)
 
 ## Helpful Links
 
