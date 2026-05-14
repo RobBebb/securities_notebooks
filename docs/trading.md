@@ -1032,7 +1032,7 @@ ETF options are PM settled, American style and physical delivery.
 - [pandas-ta](https://pypi.org/project/pandas-ta/)
 - [polars-talib](https://pypi.org/project/polars-talib/)
 - [ta-lib Pattern Recognition Functions - Candlesticks](https://github.com/TA-Lib/ta-lib-python/blob/master/docs/func_groups/pattern_recognition.md)
-- [PatternPy ]
+- [tradingpattern](https://pypi.org/project/tradingpattern/) also known as TradingPatternScanner and imported as tradingpatterns
 - Project **trading_utilities** - My project containing candlesticks patterns, stock utilities and option utilities.
 
 [🠉](#table-of-contents)
