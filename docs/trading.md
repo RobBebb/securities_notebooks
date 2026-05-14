@@ -3,6 +3,7 @@
 ## Table of Contents <!-- omit from toc -->
 
 - [Trading](#trading)
+  - [Links](#links)
   - [Market Hours](#market-hours)
   - [Market Calendar](#market-calendar)
   - [Stocks to monitor](#stocks-to-monitor)
@@ -17,7 +18,7 @@
 - [Database](#database)
   - [polygon](#polygon)
   - [securities](#securities)
-- [Projects](#projects)
+- [My Projects](#my-projects)
   - [Securities Load](#securities-load)
   - [Trading Utilities](#trading-utilities)
   - [Securities Notebooks](#securities-notebooks)
@@ -45,6 +46,8 @@
 - [TODO](#todo)
 
 ## Trading
+
+### Links
 
 - [Financial Wisdom (YouTube)](https://www.youtube.com/c/FinancialWisdom)
 - [ASX Online courses](https://www.asx.com.au/investors/investment-tools-and-resources/online-courses)
@@ -564,14 +567,38 @@ A local database containing all the data for the system.
 
 [🠉](#table-of-contents)
 
-## Projects
+## My Projects
 
-There are four projects:
+There are four main projects:
 
 - [securities_load](#securities-load) - ETL of option data and api to access the data in the database
 - [trading_utilities](#trading-utilities) - code to identify candlesticks, stock utilities and option utilities
 - [securities_notebooks](#securities-notebooks) - notebooks and code for backtesting etc. and a dashboard to analyse stocks
 - [polars_backtesting_engine](#polars-backtesting-engine) - backtesting using polars dataframes (a work in progress)
+
+This one shows programmably looking for patterns (head and shoulders etc.):
+
+- PatternPy -This project looks for stock patterns. I think I got it from PyPi but I cannot find it any longer.
+
+The following projects are in windows `c:\projects\` as they need IB TWS:
+
+- ib-trading - [Interactive Brokers TWS API Tutorial (Python)](https://hackingthemarkets.com/interactive-brokers-tws-api-tutorial/)
+- ib_opening_range_breakout
+  - [Interactive Brokers ib_async Tutorial: Understanding asyncio](https://hackingthemarkets.com/understanding-asyncio/)
+  - [Interactive Brokers ib_async Tutorial: Opening Range Breakout](https://hackingthemarkets.com/ib_async-tutorial-part-2/)
+  - [ORB Strategy in Python with IBKR API and ib_async](https://www.youtube.com/watch?v=a1813iCcsWQ)
+- ib_tradingview
+  - [Full Stack IBKR API (1/4): TradingView Chart Integration](https://hackingthemarkets.com/real-time-tradingview-charts/)
+  - [Full Stack IBKR API (2/4): SSE and Real-Time Data Streams](https://hackingthemarkets.com/ibkr-real-time-data-sse-and-tradingview-charts/)
+  - [Full Stack IBKR API (3/4): Web-Based Market Scanner](https://hackingthemarkets.com/full-stack-ibkr-api-3-4-web-based-market-scanner/)
+  - [Full Stack IBKR API (4/4): TradingView Webhooks and Strategy Alerts](https://hackingthemarkets.com/full-stack-ibkr-api-4-4-tradingview-webhooks/)
+
+Backtesting projects
+
+- backtester - [AlgoTrading101 - Build a custom backtester with Python](https://algotrading101.com/learn/build-my-own-custom-backtester-python/) [algotrading101 - An Introductory Guide to Backtesting with Python](https://algotrading101.com/learn/backtesting-py-guide/)
+- trading-backtester - [Trading-Backtester - A Python library for backtesting trading strategies.](https://github.com/madamskip1/trading-backtester/tree/master).
+- backtesting_engine and backtesting_engine2 (multiple symbols)[Build a Backtesting Framework in Python from Scratch](https://mayerkrebs.com/building-a-backtesting-framework-in-python-from-scratch/) site no longer exists.
+- polars_backtesting_engine - A Project I am writing to cater for polars databases. It is based off *BacktestPro* and *Trading-Backtester*.
 
 [🠉](#table-of-contents)
 
@@ -1006,6 +1033,7 @@ ETF options are PM settled, American style and physical delivery.
 - [polars-talib](https://pypi.org/project/polars-talib/)
 - [ta-lib Pattern Recognition Functions - Candlesticks](https://github.com/TA-Lib/ta-lib-python/blob/master/docs/func_groups/pattern_recognition.md)
 - [PatternPy ]
+- Project **trading_utilities** - My project containing candlesticks patterns, stock utilities and option utilities.
 
 [🠉](#table-of-contents)
 
@@ -1033,7 +1061,7 @@ ETF options are PM settled, American style and physical delivery.
 - [Vector-Based vs Event-Based Backtesting](https://www.interactivebrokers.com/campus/ibkr-quant-news/a-practical-breakdown-of-vector-based-vs-event-based-backtesting/) - has great example code for each type of backtesting
 - [Mermaid Flowcharts in Markdown](https://mermaid.js.org/syntax/flowchart.html)
 - [Markdown Cheat Sheet](https://markdowncheatsheet.com/reference)
-- [Part Time Larry](https://www.youtube.com/@parttimelarry/videos)
+- [Part Time Larry](https://www.youtube.com/@parttimelarry/videos) Can find more written tutorials from him here: [Hacking the Markets](https://hackingthemarkets.com/)
   - [Interactive Brokers TWS API + TradingView Charts Python Tutorial (Updated)](https://www.youtube.com/watch?v=ZEtsLuXdC-g)
   - [Interactive Brokers Web API [Part 1] - Docker Tutorial](https://www.youtube.com/watch?v=CRsH9TKveLo)
   - [Interactive Brokers Web API [Part 2] - Python Tutorial](https://www.youtube.com/watch?v=r9w8lmhQuSk)
